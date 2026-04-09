@@ -149,7 +149,6 @@ export function DashboardClient({ initialUser }: { initialUser: UserProfile }) {
                         avatarBox: "w-12 h-12 rounded-2xl shadow-xl border-2 border-accent/20"
                       }
                     }}
-                    afterSignOutUrl="/sign-in"
                  />
               </div>
            </div>

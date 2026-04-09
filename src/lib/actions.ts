@@ -15,7 +15,11 @@ export async function getUserProfile() {
   });
 }
 
-export { syncUser } from './user';
+import { syncUser as syncUserFromLib } from './user';
+
+export async function syncUser() {
+  return await syncUserFromLib();
+}
 
 // Kullanıcı Profilini Güncelle (Kurumsal Kimlik)
 export async function updateUserProfile(formData: FormData) {
