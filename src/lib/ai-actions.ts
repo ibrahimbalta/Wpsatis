@@ -17,6 +17,7 @@ export async function parseListingWithAI(text: string) {
       name: z.string().optional().describe('İlan başlığı'),
       price: z.string().optional().describe('Fiyat (sadece sayı)'),
       category: z.string().optional().describe('Daire, Arsa, İşyeri vb.'),
+      description: z.string().optional().describe('İlan açıklaması'),
       rooms: z.string().optional().describe('2+1, 3+1 formatında'),
       squareMeters: z.number().optional().describe('Metrekare'),
       floorLevel: z.string().optional().describe('Kat bilgisi'),
