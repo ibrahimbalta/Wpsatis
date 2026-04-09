@@ -1,78 +1,101 @@
 'use server';
 
 import { db } from '@/db';
-import { templates, products, botRules } from '@/db/schema';
-import { auth } from '@clerk/nextjs/server';
-import { eq, and } from 'drizzle-orm';
+import { products, templates, botRules, users } from '@/db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
-// --- TEMPLATES ---
-export async function getTemplates(sectorId: string) {
+// Kullanıcıyı veritabanı ile eşleştirme
+export async function syncUser() {
   const { userId } = await auth();
-  if (!userId) return [];
+  const user = await currentUser();
 
-  return await db.query.templates.findMany({
-    where: and(
-      eq(templates.userId, userId),
-      eq(templates.sectorId, sectorId)
-    ),
-  });
+  if (!userId || !user) return null;
+
+  const existingUser = await db.select().from(users).where(eq(users.clerkId, userId));
+
+  if (existingUser.length === 0) {
+    await db.insert(users).values({
+      clerkId: userId,
+      email: user.emailAddresses[0].emailAddress,
+      name: `${user.firstName} ${user.lastName}`,
+    });
+  }
+
+  return userId;
 }
 
-export async function createTemplate(data: { title: string, body: string, category: string, sectorId: string }) {
+// İlan (Gayrimenkul) Oluşturma
+export async function createProduct(formData: FormData) {
   const { userId } = await auth();
-  if (!userId) throw new Error('Oturum açılmadı');
+  if (!userId) throw new Error('Unauthorized');
 
-  await db.insert(templates).values({
-    userId,
-    ...data,
-  });
-
-  revalidatePath('/');
-}
-
-// --- PRODUCTS ---
-export async function getProducts(sectorId: string) {
-  const { userId } = await auth();
-  if (!userId) return [];
-
-  return await db.query.products.findMany({
-    where: and(
-      eq(products.userId, userId),
-      eq(products.sectorId, sectorId)
-    ),
-  });
-}
-
-export async function createProduct(data: { name: string, price: string, category: string, description: string, imageLabel: string, sectorId: string }) {
-  const { userId } = await auth();
-  if (!userId) throw new Error('Oturum açılmadı');
+  const name = formData.get('name') as string;
+  const price = formData.get('price') as string;
+  const category = formData.get('category') as string;
+  const description = formData.get('description') as string;
+  
+  // Yeni Emlak Alanları
+  const rooms = formData.get('rooms') as string;
+  const squareMeters = parseInt(formData.get('squareMeters') as string) || 0;
+  const floorLevel = formData.get('floorLevel') as string;
+  const location = formData.get('location') as string;
+  const isRental = formData.get('isRental') === 'true';
+  const externalUrl = formData.get('externalUrl') as string;
 
   await db.insert(products).values({
     userId,
-    ...data,
+    name,
+    price,
+    category,
+    description,
+    rooms,
+    squareMeters,
+    floorLevel,
+    location,
+    isRental,
+    externalUrl,
+    sectorId: 'emlak',
   });
 
   revalidatePath('/');
 }
 
-// --- BOT RULES ---
-export async function getBotRules() {
+// Mesaj Şablonu Oluşturma
+export async function createTemplate(formData: FormData) {
   const { userId } = await auth();
-  if (!userId) return [];
+  if (!userId) throw new Error('Unauthorized');
 
-  return await db.query.botRules.findMany({
-    where: eq(botRules.userId, userId),
+  const title = formData.get('title') as string;
+  const body = formData.get('body') as string;
+  const category = formData.get('category') as string;
+  const sectorId = formData.get('sectorId') as string;
+
+  await db.insert(templates).values({
+    userId,
+    title,
+    body,
+    category,
+    sectorId,
   });
+
+  revalidatePath('/');
 }
 
-export async function createBotRule(data: { trigger: string, response: string, actionType: string }) {
+// Bot Kuralı Oluşturma
+export async function createBotRule(formData: FormData) {
   const { userId } = await auth();
-  if (!userId) throw new Error('Oturum açılmadı');
+  if (!userId) throw new Error('Unauthorized');
+
+  const trigger = formData.get('trigger') as string;
+  const response = formData.get('response') as string;
 
   await db.insert(botRules).values({
     userId,
-    ...data,
+    trigger,
+    response,
+    actionType: 'text',
   });
 
   revalidatePath('/');

@@ -1,109 +1,70 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useSector, Sector } from '@/context/SectorContext';
+import React from 'react';
 import { 
   MessageSquare, 
   Calculator, 
-  Package, 
+  Building2, 
   BookOpen, 
   Settings, 
-  ChevronDown,
   LayoutDashboard,
-  Check,
   Zap,
-  Sparkles
+  Sparkles,
+  Map,
+  BadgeCent
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function Sidebar() {
-  const { currentSector, setCurrentSector, availableSectors } = useSector();
-  const [isSectorOpen, setIsSectorOpen] = useState(false);
-
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
+    { icon: Building2, label: 'İlan Portföyü', id: 'catalog' },
     { icon: MessageSquare, label: 'Mesaj Şablonları', id: 'templates' },
-    { icon: Zap, label: 'Bot Yönetimi', id: 'bot' },
-    { icon: Sparkles, label: 'AI Asistanı', id: 'ai' },
-    { icon: Calculator, label: 'Fiyat Hesaplayıcı', id: 'calculator' },
-    { icon: Package, label: 'Ürün Kataloğu', id: 'catalog' },
-    { icon: BookOpen, label: 'Satış Eğitimi', id: 'training' },
+    { icon: Zap, label: 'WhatsApp Botu', id: 'bot' },
+    { icon: Sparkles, label: 'Yapay Zeka Danışman', id: 'ai' },
+    { icon: Calculator, label: 'Kredi Hesaplayıcı', id: 'calculator' },
+    { icon: BadgeCent, label: 'Satış Akademisi', id: 'training' },
   ];
 
   return (
-    <aside className="w-72 glass-card h-[calc(100vh-2rem)] sticky top-4 left-4 flex flex-col p-4 z-50">
-      <div className="flex items-center gap-3 px-3 py-2 mb-8">
-        <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/20">
-          <MessageSquare className="text-white w-6 h-6" />
+    <aside className="w-72 glass-card h-[calc(100vh-2rem)] sticky top-4 left-4 flex flex-col p-4 z-50 bg-[#0a0f1d]/50 border-white/5">
+      <div className="flex items-center gap-3 px-3 py-4 mb-10 border-b border-white/5 pb-6">
+        <div className="w-12 h-12 bg-accent rounded-2xl flex items-center justify-center shadow-2xl shadow-accent/20">
+          <Building2 className="text-white w-7 h-7" />
         </div>
         <div>
-          <span className="font-black text-xl tracking-tight text-white block leading-none">Wpsatis</span>
-          <span className="text-[10px] text-accent font-bold uppercase tracking-widest">Satış Kiti</span>
+          <span className="font-black text-2xl tracking-tight text-white block leading-none">EmlakAI</span>
+          <span className="text-[10px] text-accent font-black uppercase tracking-widest mt-1 block">Satış Asistanı</span>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1">
+      <nav className="flex-1 space-y-2">
         {menuItems.map((item) => (
           <button
             key={item.id}
             className={cn(
-              "nav-item w-full group",
-              item.id === 'templates' && "active bg-accent/10 border-r-2 border-accent"
+              "nav-item w-full group flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300",
+              item.id === 'catalog' ? "bg-accent/10 text-white border border-accent/20 shadow-inner" : "text-slate-500 hover:bg-white/5 hover:text-slate-200"
             )}
           >
-            <item.icon size={20} className="group-hover:scale-110 transition-transform" />
-            <span className="font-semibold">{item.label}</span>
+            <item.icon size={22} className={cn("transition-transform duration-300 group-hover:scale-110", item.id === 'catalog' ? "text-accent" : "text-slate-500 group-hover:text-slate-300")} />
+            <span className="font-bold text-sm tracking-tight">{item.label}</span>
           </button>
         ))}
       </nav>
 
       <div className="mt-auto pt-6 flex flex-col gap-4">
-        {/* Sector Selector */}
-        <div className="relative">
-          <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2 px-3">
-            Sektör Değiştir
-          </p>
-          <button 
-            onClick={() => setIsSectorOpen(!isSectorOpen)}
-            className="w-full flex items-center justify-between px-3 py-3 bg-slate-900/50 hover:bg-slate-800 border border-glass-border rounded-xl transition-all group"
-          >
-            <div className="flex flex-col items-start">
-              <span className="text-sm font-bold text-white leading-tight">
-                {currentSector?.name}
-              </span>
-            </div>
-            <ChevronDown size={14} className={cn("text-slate-500 transition-transform duration-300", isSectorOpen && "rotate-180")} />
-          </button>
-
-          {isSectorOpen && (
-            <div className="absolute bottom-full left-0 w-full mb-2 bg-[#1e293b] border border-glass-border rounded-xl shadow-2xl overflow-y-auto max-h-80 animate-in slide-in-from-bottom-2 duration-200 z-50 scroller-thin">
-              {availableSectors.map((sector) => (
-                <button
-                  key={sector.id}
-                  onClick={() => {
-                    setCurrentSector(sector);
-                    setIsSectorOpen(false);
-                  }}
-                  className={cn(
-                    "w-full flex items-center justify-between px-4 py-3 text-sm transition-all hover:bg-accent/10",
-                    currentSector?.id === sector.id ? "text-accent bg-accent/5" : "text-slate-300"
-                  )}
-                >
-                  <span className={cn(currentSector?.id === sector.id ? "font-bold" : "font-medium")}>
-                    {sector.name}
-                  </span>
-                  {currentSector?.id === sector.id && <Check size={14} />}
-                </button>
-              ))}
-            </div>
-          )}
+        {/* Support Card */}
+        <div className="bg-gradient-to-br from-accent/20 to-transparent p-5 rounded-3xl border border-accent/10 mb-2">
+          <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-2">PRO DESTEK</p>
+          <p className="text-xs text-slate-300 font-medium leading-relaxed mb-4">Portföyünüzü botumuza bağlayın, 7/24 satış yapın.</p>
+          <button className="w-full py-2.5 bg-accent/20 hover:bg-accent/30 text-accent text-[10px] font-black rounded-xl border border-accent/20 transition-all uppercase tracking-widest">Yardım Al</button>
         </div>
-        
-        <div className="border-t border-glass-border my-2" />
 
-        <button className="nav-item w-full">
-          <Settings size={20} />
-          <span className="font-semibold">Ayarlar</span>
+        <div className="border-t border-white/5 my-2" />
+
+        <button className="flex items-center gap-4 px-4 py-4 text-slate-500 hover:text-white transition-colors group">
+          <Settings size={20} className="group-hover:rotate-45 transition-transform duration-500" />
+          <span className="font-bold text-sm">Ayarlar</span>
         </button>
       </div>
     </aside>

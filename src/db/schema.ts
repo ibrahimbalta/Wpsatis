@@ -1,29 +1,18 @@
-import { pgTable, text, timestamp, integer, uuid, boolean, numeric } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, decimal, integer } from 'drizzle-orm/pg-core';
 
-// Users table (Syncs with Clerk)
 export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  clerkId: text('clerk_id').notNull().unique(),
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  clerkId: text('clerk_id').unique().notNull(), 
   email: text('email').notNull(),
   name: text('name'),
-  selectedSectorId: text('selected_sector_id').default('1'), // Default to Seramik
+  selectedSectorId: text('selected_sector_id'), 
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-// Sectors metadata (Reference)
-export const sectors = pgTable('sectors', {
-  id: text('id').primaryKey(), // 1, 2, 3...
-  name: text('name').notNull(),
-  slug: text('slug').notNull(),
-  icon: text('icon').notNull(),
-  description: text('description'),
-});
-
-// Templates
 export const templates = pgTable('templates', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: text('user_id').notNull(), // Clerk User ID
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  userId: text('user_id').notNull(),
   sectorId: text('sector_id').notNull(),
   title: text('title').notNull(),
   body: text('body').notNull(),
@@ -31,22 +20,31 @@ export const templates = pgTable('templates', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-// Products
+// Portföy / İlanlar (Modern Identity Yapısı)
 export const products = pgTable('products', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   userId: text('user_id').notNull(),
-  sectorId: text('sector_id').notNull(),
-  name: text('name').notNull(),
-  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
-  category: text('category').notNull(),
+  sectorId: text('sector_id').notNull().default('emlak'),
+  
+  name: text('name').notNull(), 
+  price: decimal('price', { precision: 20, scale: 2 }).notNull(),
+  category: text('category').notNull(), 
   description: text('description'),
-  imageLabel: text('image_label'),
+  
+  // Emlak Detayları
+  rooms: text('rooms'),       
+  squareMeters: integer('square_meters'),
+  floorLevel: text('floor_level'),
+  location: text('location'), 
+  isRental: boolean('is_rental').default(false),
+  externalUrl: text('external_url'), 
+  
+  imageLabel: text('image_label'), 
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-// Bot Rules
 export const botRules = pgTable('bot_rules', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   userId: text('user_id').notNull(),
   trigger: text('trigger').notNull(),
   response: text('response').notNull(),

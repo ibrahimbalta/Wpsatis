@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { useSector } from '@/context/SectorContext';
-import { Search, Plus, Calculator, MessageSquare, Package, LayoutDashboard, BookOpen, Zap, Sparkles, Database } from 'lucide-react';
+import { Search, Plus, Calculator, MessageSquare, Building2, LayoutDashboard, BookOpen, Zap, Sparkles, Database } from 'lucide-react';
 import { PricingCalculator } from '@/components/PricingCalculator';
 import { TemplateList } from '@/components/TemplateList';
 import { SalesTraining } from '@/components/SalesTraining';
@@ -24,7 +24,7 @@ interface DashboardClientProps {
 
 export function DashboardClient({ initialUser }: DashboardClientProps) {
   const { currentSector } = useSector();
-  const [activeTab, setActiveTab] = useState('templates');
+  const [activeTab, setActiveTab] = useState('catalog'); // Defaulting to catalog/portfolio for real estate
   const [searchQuery, setSearchQuery] = useState('');
   const [isSeeding, setIsSeeding] = useState(false);
   
@@ -33,7 +33,7 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
   const [isProductDrawerOpen, setIsProductDrawerOpen] = useState(false);
 
   const handleSeed = async () => {
-    if (!confirm('15 sektörlük örnek veriler yüklenecek. Emin misiniz?')) return;
+    if (!confirm('Emlakçı portföyü için örnek veriler yüklenecek. Emin misiniz?')) return;
     setIsSeeding(true);
     try {
       const result = await seedSampleData();
@@ -47,16 +47,15 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
   };
 
   const tabs = [
-    { id: 'templates', label: 'Şablonlar', icon: MessageSquare },
+    { id: 'catalog', label: 'Portföyüm', icon: Building2 },
+    { id: 'templates', label: 'Mesaj Kitim', icon: MessageSquare },
     { id: 'bot', label: 'Bot Yönetimi', icon: Zap },
-    { id: 'ai', label: 'AI Asistanı', icon: Sparkles },
-    { id: 'calculator', label: 'Hesaplayıcı', icon: Calculator },
-    { id: 'catalog', label: 'Katalog', icon: Package },
-    { id: 'training', label: 'Eğitim', icon: BookOpen },
+    { id: 'ai', label: 'AI Danışman', icon: Sparkles },
+    { id: 'calculator', label: 'Kredi/Komisyon', icon: Calculator },
   ];
 
   return (
-    <main className="flex min-h-screen p-4 gap-6 bg-[#0a0f1d] text-slate-200">
+    <main className="flex min-h-screen p-4 gap-6 bg-[#030712] text-slate-200">
       <Sidebar />
       
       <section className="flex-1 flex flex-col gap-8 max-w-7xl mx-auto w-full">
@@ -65,28 +64,19 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
           <div className="animate-in slide-in-from-left duration-500">
             <div className="flex items-center gap-3 mb-2">
               <span className="px-3 py-1 bg-accent/20 text-accent text-[10px] font-black rounded-lg tracking-widest uppercase border border-accent/20">
-                {currentSector?.name} Modülü
+                Gayrimenkul Modülü
               </span>
-              <button 
-                onClick={handleSeed}
-                disabled={isSeeding}
-                className="flex items-center gap-2 px-3 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-[10px] font-black rounded-lg tracking-widest uppercase border border-glass-border transition-all disabled:opacity-50"
-              >
-                <Database size={12} />
-                {isSeeding ? 'YÜKLENİYOR...' : 'ÖRNEK VERİLERİ YÜKLE'}
-              </button>
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-none mb-2">
-              {activeTab === 'bot' ? 'Bot' : activeTab === 'ai' ? 'AI' : 'Satış'}{' '}
-              <span className="text-accent underline underline-offset-8 decoration-accent/20 italic">Hub</span>
+              Emlak <span className="text-accent underline underline-offset-8 decoration-accent/20 italic">Portföyü</span>
             </h1>
             <p className="text-slate-500 max-w-md text-sm font-medium">
-              Hoş geldin, <span className="text-white font-bold">{initialUser?.name || 'Kullanıcı'}</span>.
+              Hoş geldin, <span className="text-white font-bold">{initialUser?.name || 'Gayrimenkul Danışmanı'}</span>.
             </p>
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-4 bg-slate-900/40 p-1.5 rounded-2xl border border-glass-border backdrop-blur-md overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-4 bg-slate-900/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md overflow-x-auto no-scrollbar">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -103,14 +93,14 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
                 </button>
               ))}
             </div>
-            <div className="w-12 h-12 flex items-center justify-center bg-slate-900/40 rounded-2xl border border-glass-border">
+            <div className="w-12 h-12 flex items-center justify-center bg-slate-900/40 rounded-2xl border border-white/5">
               <UserButton />
             </div>
           </div>
         </header>
 
         {/* Search & Actions Bar */}
-        {activeTab !== 'calculator' && activeTab !== 'training' && activeTab !== 'bot' && activeTab !== 'ai' && (
+        {activeTab !== 'calculator' && activeTab !== 'bot' && activeTab !== 'ai' && (
           <div className="flex flex-col md:flex-row items-center gap-4 px-2 animate-in fade-in slide-in-from-top-4 duration-500 delay-150">
             <div className="relative flex-1 w-full group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5 group-focus-within:text-accent transition-colors" />
@@ -118,8 +108,8 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`${activeTab === 'templates' ? 'Mesaj şablonu' : 'Ürün'} içeriği veya başlığı ara...`} 
-                className="w-full bg-slate-900/50 border border-glass-border rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 transition-all font-medium"
+                placeholder={`${activeTab === 'templates' ? 'Mesaj şablonu' : 'İlan, konum veya mülk tipi'} ara...`} 
+                className="w-full bg-slate-900/50 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 transition-all font-medium placeholder:text-slate-600"
               />
             </div>
             <button 
@@ -127,10 +117,10 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
                 if (activeTab === 'templates') setIsTemplateDrawerOpen(true);
                 if (activeTab === 'catalog') setIsProductDrawerOpen(true);
               }}
-              className="glass-button w-full md:w-auto h-14 px-8 shadow-xl shadow-accent/10 group"
+              className="glass-button w-full md:w-auto h-14 px-8 shadow-xl shadow-accent/10 group bg-accent hover:bg-accent-light border-none"
             >
               <Plus size={20} className="stroke-[3px] group-hover:rotate-90 transition-transform" />
-              <span className="font-bold">Yeni Kayıt</span>
+              <span className="font-black uppercase tracking-tight">Yeni {activeTab === 'templates' ? 'Şablon' : 'İlan'} Ekle</span>
             </button>
           </div>
         )}
@@ -146,7 +136,7 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
                <div className="xl:col-span-2">
                   <FlowBuilder />
                </div>
-               <div className="xl:col-span-1 border-l border-glass-border pl-8 hidden xl:block">
+               <div className="xl:col-span-1 border-l border-white/5 pl-8 hidden xl:block">
                   <BotSimulator />
                </div>
             </div>
@@ -165,10 +155,6 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
           {activeTab === 'catalog' && (
             <ProductList searchQuery={searchQuery} />
           )}
-
-          {activeTab === 'training' && (
-            <SalesTraining />
-          )}
         </div>
       </section>
 
@@ -176,7 +162,7 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
       <Drawer 
         isOpen={isTemplateDrawerOpen} 
         onClose={() => setIsTemplateDrawerOpen(false)} 
-        title="Yeni Şablon Ekle"
+        title="Yeni Mesaj Şablonu"
       >
         <TemplateForm onSuccess={() => {
           setIsTemplateDrawerOpen(false);
@@ -187,7 +173,7 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
       <Drawer 
         isOpen={isProductDrawerOpen} 
         onClose={() => setIsProductDrawerOpen(false)} 
-        title="Yeni Ürün / Hizmet Ekle"
+        title="Yeni Portföy Kaydı"
       >
         <ProductForm onSuccess={() => {
           setIsProductDrawerOpen(false);
