@@ -7,7 +7,29 @@ import { db } from '@/db';
 import { products } from '@/db/schema';
 import { ilike, or, and, eq } from 'drizzle-orm';
 
-// AI Veri Ayıklama Fonksiyonu (İlan girişi için)
+// Çoklu İlan Ayıklama Fonksiyonu (Mağaza sayfasından kopyalanan metin için)
+export async function parseMultipleListingsWithAI(text: string) {
+  const { object } = await generateObject({
+    model: google('gemini-1.5-flash'),
+    system: 'Sen uzman bir emlak veri madencisisin. Sana verilen karmaşık metin yığınlarından (Sahibinden mağaza listesi gibi) TÜM ilanları tespit etmeli ve listelemelisin.',
+    prompt: `Şu metin yığınındaki tüm emlak ilanlarını bul ve ayıkla: ${text}`,
+    schema: z.object({
+      listings: z.array(z.object({
+        name: z.string().describe('İlan başlığı'),
+        price: z.string().describe('Fiyat (sadece sayı)'),
+        category: z.string().describe('Daire, Arsa, Villa vb.'),
+        location: z.string().describe('İlçe/Mahalle bilgisi'),
+        rooms: z.string().optional().describe('2+1, 3+1 vb.'),
+        squareMeters: z.number().optional().describe('Metrekare'),
+        isRental: z.boolean().describe('Kiralık mı?'),
+      }))
+    }),
+  });
+
+  return object.listings;
+}
+
+// AI Veri Ayıklama Fonksiyonu (Tekil ilan girişi için)
 export async function parseListingWithAI(text: string) {
   const { object } = await generateObject({
     model: google('gemini-1.5-flash'),
@@ -35,8 +57,14 @@ export async function chatWithEmlakAI(messages: any[]) {
     model: google('gemini-1.5-flash'),
     system: `Sen profesyonel bir Gayrimenkul Satış Uzmanısın (Wpsatis Bot). 
     Görevin müşteriden gelen mesajları analiz etmek ve veritabanındaki portföyümüzü kullanarak en uygun gayrimenkulü önermektir.
-    İlanları sunarken mutlaka ilan ID'sini kullanarak profesyonelce link ver.
-    Müşteriye karşı nazik, satış odaklı ve çözümleyici bir ton kullan.`,
+    
+    Önemli Kurallar:
+    1. İlanları sunarken mutlaka ilan ID'sini kullanarak profesyonelce link ver (Örn: /ilan/12).
+    2. Eğer müşteri genel bir konum (örn: Çanakkale) soruyorsa, arama aracını kullanarak o konumdaki tüm ilanları listele.
+    3. Fiyat, oda sayısı ve m2 gibi detayları net bir şekilde belirt.
+    4. Mülkün avantajlarından bahset (örn: deniz manzaralı, önü açık, yatırım fırsatı).
+    5. Müşteriye karşı nazik, satış odaklı ve çözümleyici bir ton kullan.
+    6. Veritabanında uygun ilan yoksa, "Şu an tam istediğiniz kriterde bir ilanımız yok ancak portföyümüz sürekli güncelleniyor, telefonunuzu bırakırsanız size uygun bir mülk düştüğünde ilk size haber veririm" de.`,
     messages,
     tools: {
       searchListings: tool({

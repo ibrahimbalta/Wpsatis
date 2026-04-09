@@ -11,7 +11,8 @@ import {
   Sparkles,
   PanelLeftClose,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,7 @@ export function Sidebar({ activeTab, setActiveTab, isOpen, toggleSidebar }: Side
   const menuItems = [
     { id: 'portfolio', label: 'İlan Portföyü', icon: <Building2 size={22} />, color: 'text-white' },
     { id: 'add-listing', label: 'Yeni İlan Ekle', icon: <PlusCircle size={22} />, color: 'text-white' },
+    { id: 'smart-import', label: 'Hızlı Aktarım', icon: <Zap size={22} />, color: 'text-accent' },
     { id: 'message-kit', label: 'Mesaj Kitim', icon: <MessageSquare size={22} />, color: 'text-white' },
     { id: 'ai-bot', label: 'AI Danışman Seviyesi', icon: <Sparkles size={22} />, color: 'text-accent' },
     { id: 'training', label: 'Emlak Satış Akademisi', icon: <GraduationCap size={22} />, color: 'text-white' },

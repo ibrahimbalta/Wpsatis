@@ -9,6 +9,7 @@ import { FlowBuilder } from './FlowBuilder';
 import { BotSimulator } from './BotSimulator';
 import { SettingsView } from './SettingsView';
 import { TrainingView } from './TrainingView';
+import { SmartImporter } from './SmartImporter';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -21,9 +22,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
 import { LiveActivity } from './LiveActivity';
-
 import { UserButton } from '@clerk/nextjs';
 
 interface UserProfile {
@@ -91,6 +90,8 @@ export function DashboardClient({ initialUser }: { initialUser: UserProfile }) {
         );
       case 'add-listing':
         return <ProductForm />;
+      case 'smart-import':
+        return <SmartImporter />;
       case 'message-kit':
         return <TemplateList searchQuery="" />;
       case 'ai-bot':
@@ -123,6 +124,7 @@ export function DashboardClient({ initialUser }: { initialUser: UserProfile }) {
                  <h2 className="text-2xl font-black text-white tracking-tighter">
                    {activeTab === 'portfolio' && 'Emlak Portföyünüz'}
                    {activeTab === 'add-listing' && 'Yeni Portföy Kaydı'}
+                   {activeTab === 'smart-import' && 'Hızlı Aktarım (Sahibinden)'}
                    {activeTab === 'message-kit' && 'Mesaj Şablonları'}
                    {activeTab === 'ai-bot' && 'WhatsApp AI Ayarları'}
                    {activeTab === 'settings' && 'Kurumsal Kimlik Ayarları'}
@@ -182,10 +184,10 @@ export function DashboardClient({ initialUser }: { initialUser: UserProfile }) {
             >
               <div className="relative">
                 <button 
-                  onClick={() => setShowBot(false)}
-                  className="absolute -top-12 -right-12 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all border border-white/10 z-[110]"
+                   onClick={() => setShowBot(false)}
+                   className="absolute -top-12 -right-12 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all border border-white/10 z-[110]"
                 >
-                  <X size={20} />
+                   <X size={20} />
                 </button>
                 <BotSimulator />
               </div>
@@ -196,4 +198,3 @@ export function DashboardClient({ initialUser }: { initialUser: UserProfile }) {
     </div>
   );
 }
-

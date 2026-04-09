@@ -142,3 +142,28 @@ export async function deleteBotRule(id: number) {
     
   revalidatePath('/');
 }
+
+// Çoklu İlan Ekleme (Mağaza Aktarımı için)
+export async function bulkCreateProducts(items: any[]) {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+
+  const productsToInsert = items.map(item => ({
+    userId,
+    name: item.name,
+    price: item.price.toString(),
+    category: item.category,
+    location: item.location,
+    rooms: item.rooms || '3+1',
+    squareMeters: item.squareMeters || 100,
+    isRental: item.isRental || false,
+    sectorId: 'emlak',
+  }));
+
+  if (productsToInsert.length > 0) {
+    await db.insert(products).values(productsToInsert);
+  }
+
+  revalidatePath('/');
+  return { success: true, count: productsToInsert.length };
+}
