@@ -15,7 +15,8 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   Layers,
-  Plus
+  Plus,
+  Navigation
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,7 +39,9 @@ export function ProductForm() {
     isRental: 'false',
     externalUrl: '',
     imageUrl: '',
-    extraImages: '', // Çoklu Fotoğraf Linkleri (Textarea)
+    extraImages: '',
+    latitude: '',
+    longitude: '', // Harita Koordinatları
   });
 
   const handleAiSmartFill = async () => {
@@ -88,6 +91,7 @@ export function ProductForm() {
         name: '', price: '', category: 'Konut', description: '',
         location: '', rooms: '3+1', squareMeters: '', floorLevel: '',
         isRental: 'false', externalUrl: '', imageUrl: '', extraImages: '',
+        latitude: '', longitude: '',
       });
     }, 2000);
   };
@@ -156,6 +160,7 @@ export function ProductForm() {
               <option>İşyeri</option>
               <option>Arsa</option>
               <option>Bina</option>
+              <option>Villa</option>
             </select>
           </div>
 
@@ -165,7 +170,7 @@ export function ProductForm() {
               <input 
                 name="location" required value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
-                placeholder="Şehir / İlçe"
+                placeholder="Şehir / İlçe / Mahalle"
                 className="w-full bg-slate-900/40 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent transition-all pl-12" 
               />
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
@@ -185,23 +190,52 @@ export function ProductForm() {
             </div>
           </div>
 
+          {/* Harita Koordinatları (Yeni Alan) */}
+          <div className="col-span-1 md:col-span-2 p-6 bg-accent/5 rounded-3xl border border-accent/10 space-y-6">
+             <div className="flex items-center gap-3">
+                <Navigation size={20} className="text-accent" />
+                <h4 className="text-xs font-black text-white uppercase tracking-widest">Harita Koordinatları (Opsiyonel)</h4>
+             </div>
+             <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Enlem (Latitude)</label>
+                  <input 
+                    name="latitude" value={formData.latitude}
+                    onChange={(e) => setFormData({...formData, latitude: e.target.value})}
+                    placeholder="Örn: 41.63"
+                    className="w-full bg-slate-900/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent" 
+                  />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Boylam (Longitude)</label>
+                  <input 
+                    name="longitude" value={formData.longitude}
+                    onChange={(e) => setFormData({...formData, longitude: e.target.value})}
+                    placeholder="Örn: 32.33"
+                    className="w-full bg-slate-900/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent" 
+                  />
+                </div>
+             </div>
+             <p className="text-[9px] text-slate-500 font-bold italic">Nokta atışı konum gösterimi için Google Haritalar'dan alınan koordinatları buraya girebilirsiniz.</p>
+          </div>
+
           {/* Teknik Özellikler */}
           <div className="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 py-4 border-y border-white/5">
             <div className="space-y-3">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Oda Sayısı</label>
-              <input name="rooms" value={formData.rooms} onChange={(e) => setFormData({...formData, rooms: e.target.value})} className="w-full bg-slate-900/30 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent" />
+              <input name="rooms" value={formData.rooms} onChange={(e) => setFormData({...formData, rooms: e.target.value})} className="w-full bg-slate-900/30 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent font-semibold" />
             </div>
             <div className="space-y-3">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Metrekare</label>
-              <input name="squareMeters" type="number" value={formData.squareMeters} onChange={(e) => setFormData({...formData, squareMeters: e.target.value})} className="w-full bg-slate-900/30 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent" />
+              <input name="squareMeters" type="number" value={formData.squareMeters} onChange={(e) => setFormData({...formData, squareMeters: e.target.value})} className="w-full bg-slate-900/30 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent font-bold" />
             </div>
             <div className="space-y-3">
               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Kat</label>
               <input name="floorLevel" value={formData.floorLevel} onChange={(e) => setFormData({...formData, floorLevel: e.target.value})} className="w-full bg-slate-900/30 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent" />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Tür</label>
-              <select name="isRental" value={formData.isRental} onChange={(e) => setFormData({...formData, isRental: e.target.value})} className="w-full bg-slate-900/30 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">İlan Türü</label>
+              <select name="isRental" value={formData.isRental} onChange={(e) => setFormData({...formData, isRental: e.target.value})} className="w-full bg-slate-900/30 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent font-black uppercase text-xs tracking-widest">
                 <option value="false">Satılık</option>
                 <option value="true">Kiralık</option>
               </select>
@@ -214,7 +248,7 @@ export function ProductForm() {
                <div className="w-8 h-8 bg-accent/20 rounded-lg flex items-center justify-center text-accent">
                   <ImageIcon size={18} />
                </div>
-               <h4 className="text-sm font-black text-white uppercase tracking-widest">Sinematik Galeri Yönetimi</h4>
+               <h4 className="text-sm font-black text-white uppercase tracking-widest">Görsel Vitrininizi Yönetin</h4>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -224,7 +258,7 @@ export function ProductForm() {
                     <input 
                       name="imageUrl" value={formData.imageUrl}
                       onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                      placeholder="https://..."
+                      placeholder="https://gorsel.com/kapak.jpg"
                       className="w-full bg-slate-900/40 border border-accent/20 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent pl-12" 
                     />
                     <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-accent" size={18} />
@@ -232,37 +266,20 @@ export function ProductForm() {
                </div>
 
                <div className="space-y-3">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Ekstra Galeri Fotoğrafları</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Galeri Fotoğrafları (URL)</label>
                   <textarea 
                     placeholder="Her satıra bir fotoğraf linki (URL) gelecek şekilde yapıştırın..."
                     value={formData.extraImages}
                     onChange={(e) => setFormData({...formData, extraImages: e.target.value})}
                     rows={4}
-                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent font-mono text-xs leading-relaxed"
+                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent font-mono text-[10px] leading-relaxed"
                   />
-                  <div className="flex items-center gap-2 text-[9px] text-slate-600 font-bold uppercase">
-                     <Plus size={12} />
-                     Sınırsız fotoğraf ekleyebilirsiniz.
-                  </div>
                </div>
             </div>
           </div>
 
           <div className="col-span-1 md:col-span-2 space-y-4">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Harici Referans Linki</label>
-            <div className="relative">
-              <input 
-                name="externalUrl" value={formData.externalUrl}
-                onChange={(e) => setFormData({...formData, externalUrl: e.target.value})}
-                placeholder="Sahibinden linki vb."
-                className="w-full bg-slate-900/40 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent pl-12 opacity-50 focus:opacity-100 transition-opacity" 
-              />
-              <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-            </div>
-          </div>
-
-          <div className="col-span-1 md:col-span-2 space-y-4">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">İlan Açıklaması</label>
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Açıklama</label>
             <textarea 
               name="description" rows={5} value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -284,12 +301,12 @@ export function ProductForm() {
           {status === 'success' ? (
             <>
               <CheckCircle2 size={24} />
-              PORTFÖY GÜNCELLENDİ
+              PORTFÖY YAYINA ALINDI
             </>
           ) : (
             <>
               <Save size={24} />
-              İLANINI YAYINA AL
+              YAYINA AL VE KAYDET
             </>
           )}
         </button>

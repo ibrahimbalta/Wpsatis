@@ -44,9 +44,13 @@ export const products = pgTable('products', {
   isRental: boolean('is_rental').default(false),
   externalUrl: text('external_url'), 
   
-  // Görsel Yönetimi (Çoklu Resim Desteği Eklendi)
-  imageUrl: text('image_url'), // Kapak fotoğrafı
-  extraImages: text('extra_images'), // JSON string olarak diğer tüm fotoğraflar
+  // Konum (Harita İçin)
+  latitude: text('latitude'),
+  longitude: text('longitude'),
+  
+  // Görsel Yönetimi
+  imageUrl: text('image_url'), 
+  extraImages: text('extra_images'), 
   
   // Analitik
   viewCount: integer('view_count').default(0), 
