@@ -17,7 +17,6 @@ import {
   Sparkles,
   Search,
   Zap,
-  GraduationCap,
   Package,
   X
 } from 'lucide-react';
@@ -25,7 +24,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { LiveActivity } from './LiveActivity';
 
-export function DashboardClient({ initialUser }: { initialUser: any }) {
+import { UserButton } from '@clerk/nextjs';
+
+interface UserProfile {
+  id: number;
+  clerkId: string;
+  email: string;
+  name: string | null;
+  companyName: string | null;
+  logoUrl: string | null;
+  whatsappNumber: string | null;
+  selectedSectorId: string | null;
+  isAiEnabled: boolean | null;
+}
+
+export function DashboardClient({ initialUser }: { initialUser: UserProfile }) {
   const [activeTab, setActiveTab] = useState('portfolio');
   const [showBot, setShowBot] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
@@ -125,17 +138,20 @@ export function DashboardClient({ initialUser }: { initialUser: any }) {
                 <input placeholder="İlanlarda veya mesajlarda ara..." className="bg-transparent border-none outline-none text-sm text-white px-4 w-64 placeholder:text-slate-700" />
               </div>
               <div className="h-10 w-px bg-white/5" />
-              <button className="flex items-center gap-4 px-2 py-2 hover:bg-white/5 rounded-2xl transition-all">
+              <div className="flex items-center gap-4 px-2 py-2">
                  <div className="text-right hidden sm:block">
-                    <p className="text-xs font-black text-white">İbrahim Balta</p>
-                    <p className="text-[9px] font-bold text-accent uppercase tracking-widest">Broker / Owner</p>
+                    <p className="text-xs font-black text-white">{initialUser?.name || 'Kullanıcı'}</p>
+                    <p className="text-[9px] font-bold text-accent uppercase tracking-widest">{initialUser?.companyName || 'Gayrimenkul Danışmanı'}</p>
                  </div>
-                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-secondary p-[2px] shadow-xl">
-                    <div className="w-full h-full rounded-2xl bg-slate-900 flex items-center justify-center overflow-hidden">
-                       <img src="https://i.pravatar.cc/150?u=ibrahim" alt="avatar" />
-                    </div>
-                 </div>
-              </button>
+                 <UserButton 
+                    appearance={{
+                      elements: {
+                        avatarBox: "w-12 h-12 rounded-2xl shadow-xl border-2 border-accent/20"
+                      }
+                    }}
+                    afterSignOutUrl="/sign-in"
+                 />
+              </div>
            </div>
         </header>
 

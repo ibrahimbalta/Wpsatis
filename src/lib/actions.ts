@@ -4,31 +4,18 @@ import { db } from '@/db';
 import { products, templates, botRules, users } from '@/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 
 // Kullanıcı Profil Bilgilerini Getir
 export async function getUserProfile() {
   const { userId } = await auth();
   if (!userId) return null;
-  const data = await db.select().from(users).where(eq(users.clerkId, userId));
-  return data.length > 0 ? data[0] : null;
+  return await db.query.users.findFirst({
+    where: eq(users.clerkId, userId),
+  });
 }
 
-// Kullanıcıyı veritabanı ile eşleştirme
-export async function syncUser() {
-  const { userId } = await auth();
-  const user = await currentUser();
-  if (!userId || !user) return null;
-  const existingUser = await db.select().from(users).where(eq(users.clerkId, userId));
-  if (existingUser.length === 0) {
-    await db.insert(users).values({
-      clerkId: userId,
-      email: user.emailAddresses[0].emailAddress,
-      name: `${user.firstName} ${user.lastName}`,
-    });
-  }
-  return userId;
-}
+export { syncUser } from './user';
 
 // Kullanıcı Profilini Güncelle (Kurumsal Kimlik)
 export async function updateUserProfile(formData: FormData) {
