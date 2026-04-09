@@ -24,10 +24,12 @@ export function TemplateForm({ onSuccess }: TemplateFormProps) {
 
     setIsSubmitting(true);
     try {
-      await createTemplate({
-        ...formData,
-        sectorId: currentSector.id
-      });
+      const fd = new FormData();
+      fd.set('title', formData.title);
+      fd.set('body', formData.body);
+      fd.set('category', formData.category);
+      fd.set('sectorId', currentSector.id);
+      await createTemplate(fd);
       onSuccess();
     } catch (error) {
       alert('Kayıt oluşturulurken hata oluştu!');
