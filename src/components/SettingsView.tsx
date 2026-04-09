@@ -10,7 +10,8 @@ import {
   CheckCircle2, 
   Loader2, 
   ShieldCheck,
-  Globe
+  Globe,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +24,7 @@ export function SettingsView() {
     companyName: '',
     logoUrl: '',
     whatsappNumber: '',
+    isAiEnabled: true,
   });
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export function SettingsView() {
           companyName: profile.companyName || '',
           logoUrl: profile.logoUrl || '',
           whatsappNumber: profile.whatsappNumber || '',
+          isAiEnabled: profile.isAiEnabled ?? true,
         });
       }
       setIsLoading(false);
@@ -141,6 +144,32 @@ export function SettingsView() {
                )}
             </div>
           </div>
+        </div>
+
+        {/* Global AI Toggle */}
+        <div className="p-8 bg-accent/5 border border-accent/10 rounded-[32px] flex items-center justify-between gap-6 group">
+           <div className="flex gap-4 items-center">
+              <div className="w-12 h-12 bg-accent/20 rounded-2xl flex items-center justify-center text-accent">
+                 <Sparkles size={24} />
+              </div>
+              <div>
+                 <h4 className="text-md font-black text-white leading-tight uppercase tracking-tight">Global AI Desteği</h4>
+                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Kural bulunamazsa AI otomatik yanıt versin</p>
+              </div>
+           </div>
+           
+           <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                name="isAiEnabled"
+                value="true"
+                checked={formData.isAiEnabled}
+                onChange={(e) => setFormData({...formData, isAiEnabled: e.target.checked})}
+                className="sr-only peer" 
+              />
+              <input type="hidden" name="isAiEnabled" value={formData.isAiEnabled ? 'true' : 'false'} />
+              <div className="w-14 h-7 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-accent peer-checked:after:bg-white"></div>
+           </label>
         </div>
 
         <div className="pt-6 border-t border-white/5">

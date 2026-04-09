@@ -37,8 +37,9 @@ export async function updateUserProfile(formData: FormData) {
   const companyName = formData.get('companyName') as string;
   const logoUrl = formData.get('logoUrl') as string;
   const whatsappNumber = formData.get('whatsappNumber') as string;
+  const isAiEnabled = formData.get('isAiEnabled') === 'true';
   await db.update(users)
-    .set({ companyName, logoUrl, whatsappNumber, updatedAt: new Date() })
+    .set({ companyName, logoUrl, whatsappNumber, isAiEnabled, updatedAt: new Date() })
     .where(eq(users.clerkId, userId));
   revalidatePath('/');
 }

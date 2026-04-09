@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { useChat } from 'ai/react';
+import React, { useState, useRef, useEffect, FormEvent } from 'react';
 import { 
   Sparkles, 
   X, 
@@ -16,22 +15,64 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export function GlobalAssistant() {
   const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { id: '1', role: 'assistant', content: 'Merhaba İbrahim Bey! Ben dijital broker ortağınız. Bugün ilanlarınız veya sistem ayarlarınız hakkında nasıl yardımcı olabilirim?' }
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: '/api/global-ai',
-    initialMessages: [
-      { id: '1', role: 'assistant', content: 'Merhaba İbrahim Bey! Ben dijital broker ortağınız. Bugün ilanlarınız veya sistem ayarlarınız hakkında nasıl yardımcı olabilirim?' }
-    ]
-  });
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: ChatMessage = { id: Date.now().toString(), role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    const assistantId = (Date.now() + 1).toString();
+    setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
+
+    try {
+      const res = await fetch('/api/global-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })) }),
+      });
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fullText += decoder.decode(value, { stream: true });
+          setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fullText } : m));
+        }
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="fixed bottom-12 right-12 z-[100]">
@@ -72,7 +113,7 @@ export function GlobalAssistant() {
                         ? "bg-accent text-white rounded-tr-none" 
                         : "bg-white/5 text-slate-200 border border-white/10 rounded-tl-none"
                     )}>
-                       {m.content}
+                       {m.content || (isLoading && m.role === 'assistant' ? '...' : '')}
                     </div>
                  </div>
                ))}
@@ -102,7 +143,7 @@ export function GlobalAssistant() {
                <div className="relative">
                   <input 
                     value={input}
-                    onChange={handleInputChange}
+                    onChange={(e) => setInput(e.target.value)}
                     placeholder="Sisteme bir komut verin..."
                     className="w-full bg-[#030712] border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-accent pr-12"
                   />

@@ -1,4 +1,20 @@
-import { Sparkles, Power, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Sparkles, 
+  Power, 
+  AlertCircle, 
+  Package, 
+  MapPin, 
+  Settings2, 
+  MessageSquare, 
+  Loader2, 
+  Zap, 
+  Plus,
+  Trash2,
+  ChevronRight
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import { getBotRules, createBotRule, toggleBotRule, deleteBotRule } from '@/lib/actions';
 
 interface BotRule {

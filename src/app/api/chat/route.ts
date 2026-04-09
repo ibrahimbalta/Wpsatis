@@ -25,7 +25,7 @@ export async function POST(req: Request) {
           query: z.string().describe('Konum, oda sayısı veya mülk tipi gibi arama kelimeleri.'),
           isRental: z.boolean().optional().describe('Kiralık mı satılık mı?'),
         }),
-        execute: async ({ query }) => {
+        execute: async ({ query }: any) => {
           const results = await db.select().from(products).where(
             or(
               ilike(products.name, `%${query}%`),
@@ -36,9 +36,9 @@ export async function POST(req: Request) {
           );
           return results;
         },
-      }),
+      } as any),
     },
   });
 
-  return result.toDataStreamResponse();
+  return result.toTextStreamResponse();
 }

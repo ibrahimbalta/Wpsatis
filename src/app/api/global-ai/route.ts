@@ -1,5 +1,3 @@
-'use client';
-
 import { google } from '@ai-sdk/google';
 import { streamText, tool } from 'ai';
 import { db } from '@/db';
@@ -10,7 +8,7 @@ import { z } from 'zod';
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  const result = await streamText({
+  const result = streamText({
     model: google('gemini-1.5-flash'),
     system: `Sen bu Emlak SaaS platformunun ana asistanısın. 
     Kullanıcının adı İbrahim. Sen onun dijital ortağısın.
@@ -22,20 +20,23 @@ export async function POST(req: Request) {
     - Kurumsal kimlik ve bot ayarlarında rehberlik edebilirsin.
     
     Üslubun: Profesyonel, çözüm odaklı ve hafif karizmatik (Senior Broker gibi).`,
-    messages,
+    messages: messages.map((m: any) => ({
+      role: m.role,
+      content: m.content || m.parts?.map((p: any) => p.text).join('') || '',
+    })),
     tools: {
       // İlan Arama Yeteneği
       list_properties: tool({
         description: 'Veritabanındaki aktif ilanları listeler veya arar.',
         parameters: z.object({
-          query: z.string().optional().description('Arama terimi (Örn: villa, daire)'),
+          query: z.string().optional().describe('Arama terimi (Örn: villa, daire)'),
           limit: z.number().optional().default(5)
         }),
-        execute: async ({ query, limit }) => {
+        execute: async ({ query, limit }: any) => {
           const results = await db.select().from(products).limit(limit).orderBy(desc(products.createdAt));
           return results;
         }
-      }),
+      } as any),
       // Analitik Raporlama Yeteneği
       get_analytics_summary: tool({
         description: 'Tüm ilanların toplam izlenme ve tıklanma istatistiklerini getirir.',
@@ -48,9 +49,9 @@ export async function POST(req: Request) {
           }).from(products);
           return stats[0];
         }
-      })
+      } as any)
     }
   });
 
-  return result.toDataStreamResponse();
+  return result.toTextStreamResponse();
 }

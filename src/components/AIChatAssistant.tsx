@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, FormEvent } from 'react';
 import { 
   Sparkles, 
   Send, 
@@ -14,16 +14,19 @@ import {
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useChat } from 'ai/react';
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 export function AIChatAssistant() {
-  const { messages, input, handleInputChange, handleSubmit, setMessages, isLoading } = useChat({
-    api: '/api/chat', // Vercel AI SDK standart yolu
-    initialMessages: [
-      { id: '1', role: 'assistant', content: 'Merhaba! Ben sizin kişisel gayrimenkul asistanınızım. Müşteriden gelen mesajı buraya yapıştırın veya portföyümüz hakkında soru sorun, size en ikna edici cevabı hazırlayayım.' }
-    ]
-  });
-
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { id: '1', role: 'assistant', content: 'Merhaba! Ben sizin kişisel gayrimenkul asistanınızım. Müşteriden gelen mesajı buraya yapıştırın veya portföyümüz hakkında soru sorun, size en ikna edici cevabı hazırlayayım.' }
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +34,44 @@ export function AIChatAssistant() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: ChatMessage = { id: Date.now().toString(), role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    const assistantId = (Date.now() + 1).toString();
+    setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })) }),
+      });
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fullText += decoder.decode(value, { stream: true });
+          setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: fullText } : m));
+        }
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto h-[700px] flex flex-col gap-6 animate-in slide-in-from-bottom-6 duration-700">
@@ -50,7 +91,9 @@ export function AIChatAssistant() {
           </div>
         </div>
         
-        <button onClick={() => setMessages([])} className="p-2 text-slate-500 hover:text-white transition-colors">
+        <button onClick={() => setMessages([
+          { id: '1', role: 'assistant', content: 'Merhaba! Ben sizin kişisel gayrimenkul asistanınızım. Müşteriden gelen mesajı buraya yapıştırın veya portföyümüz hakkında soru sorun, size en ikna edici cevabı hazırlayayım.' }
+        ])} className="p-2 text-slate-500 hover:text-white transition-colors">
           <RotateCcw size={18} />
         </button>
       </div>
@@ -75,11 +118,11 @@ export function AIChatAssistant() {
                 ? "bg-slate-800 text-slate-200 border border-white/5" 
                 : "bg-accent/10 text-slate-200 border border-accent/20"
             )}>
-              {msg.content.split('\n').map((line, idx) => (
+              {(msg.content || '...').split('\n').map((line, idx) => (
                 <p key={idx} className={idx > 0 ? "mt-2" : ""}>{line}</p>
               ))}
               
-              {msg.id !== '1' && msg.role === 'assistant' && (
+              {msg.id !== '1' && msg.role === 'assistant' && msg.content && (
                 <div className="mt-4 flex gap-2">
                   <button className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/20 hover:bg-accent text-[10px] font-black rounded-lg text-accent hover:text-white transition-all border border-accent/20">
                     <Copy size={12} /> KOPYALA
@@ -96,7 +139,7 @@ export function AIChatAssistant() {
         <div className="relative">
           <textarea 
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Müşterinin mesajını yapıştırın veya 'Bartındaki dairelerimizi listele' yazın..."
             className="w-full bg-slate-900/50 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent transition-all text-sm font-medium resize-none min-h-[120px] placeholder:text-slate-600"
           />

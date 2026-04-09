@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { streamText, StreamData, generateObject } from 'ai';
+import { streamText, generateObject, convertToModelMessages, UIMessage } from 'ai';
 import { z } from 'zod';
 
 export async function POST(req: Request) {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const selected = scenarios[scenario] || scenarios['pazarlik'];
     const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop();
 
-    const data = new StreamData();
+    let analysisData = null;
 
     // 1. ANALİZ ADIMI: Kullanıcın mesajını değerlendir
     if (lastUserMessage) {
@@ -40,23 +40,17 @@ export async function POST(req: Request) {
           }),
           system: `Sen bir emlak satış koçusun. Danışmanın müşteriye verdiği şu yanıtı analiz et:
           Müşteri Profili: ${selected.role}
-          Yanıt: "${lastUserMessage.content}"
+          Yanıt: "${lastUserMessage.content || lastUserMessage.parts?.map((p: any) => p.text).join('') || ''}"
           
           İkna seviyesini (0-100), Güven skorunu (0-100) belirle ve kısa bir gelişim tavsiyesi ver.`,
           prompt: `Yanıtı analiz et ve tavsiye ver.`,
        });
        
-       // Analiz verilerini stream ile gönder
-       data.append({ 
-         type: 'analysis', 
-         persuasion: analysis.object.persuasionLevel, 
-         trust: analysis.object.trustScore,
-         tip: analysis.object.coachTip 
-       });
+       analysisData = analysis.object;
     }
 
     // 2. YANIT ADIMI: Müşterinin (Personanın) yanıtını oluştur
-    const result = await streamText({
+    const result = streamText({
       model: google('gemini-1.5-flash'),
       system: `Sen şu an bir ROLEPLAY personasısın.
       Karakterin: ${selected.role}
@@ -68,14 +62,23 @@ export async function POST(req: Request) {
       - Gerçek bir müşteri gibi tepki ver (Kızabilirsin, şüphe duyabilirsin).
       - Eğer emlakçı (kullanıcı) seni ikna ederse yavaşça yumuşa. 
       - Görüşme bitene kadar müşteri kimliğinden çıkma.
-      - Yanıtların kısa ve WhatsApp mesajı tadında olsun.`,
-      messages,
-      onFinish: () => {
-        data.close();
-      }
+      - Yanıtların kısa ve WhatsApp mesajı tadında olsun.
+      ${analysisData ? `\n\n[SİSTEM NOTU - Bu bilgiyi kullanıcıya gösterme: Analiz sonuçları - İkna: ${analysisData.persuasionLevel}%, Güven: ${analysisData.trustScore}%]` : ''}`,
+      messages: messages.map((m: any) => ({
+        role: m.role,
+        content: m.content || m.parts?.map((p: any) => p.text).join('') || '',
+      })),
     });
 
-    return result.toDataStreamResponse({ data });
+    // Analysis verisini header'da gönder
+    const headers: Record<string, string> = {
+      'Content-Type': 'text/plain; charset=utf-8',
+    };
+    if (analysisData) {
+      headers['X-Analysis-Data'] = JSON.stringify(analysisData);
+    }
+
+    return result.toTextStreamResponse({ headers });
   } catch (error) {
     console.error('Academy API Error:', error);
     return new Response('Internal Server Error', { status: 500 });

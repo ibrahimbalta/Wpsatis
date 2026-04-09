@@ -12,6 +12,7 @@ export const users = pgTable('users', {
   whatsappNumber: text('whatsapp_number'), 
   
   selectedSectorId: text('selected_sector_id').default('emlak'), 
+  isAiEnabled: boolean('is_ai_enabled').default(true),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

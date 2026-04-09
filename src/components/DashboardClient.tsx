@@ -4,8 +4,11 @@ import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { ProductList } from './ProductList';
 import { ProductForm } from './ProductForm';
-import { TemplateManager } from './TemplateManager';
+import { TemplateList } from './TemplateList';
+import { FlowBuilder } from './FlowBuilder';
 import { BotSimulator } from './BotSimulator';
+import { SettingsView } from './SettingsView';
+import { TrainingView } from './TrainingView';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -15,19 +18,23 @@ import {
   Search,
   Zap,
   GraduationCap,
+  Package,
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { LiveActivity } from './LiveActivity';
 
-export function DashboardClient() {
-  const [activeTab, setActiveTab] = useState('products');
+export function DashboardClient({ initialUser }: { initialUser: any }) {
+  const [activeTab, setActiveTab] = useState('portfolio');
   const [showBot, setShowBot] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+
+  const toggleSidebar = () => setIsOpen(!isOpen);
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'products':
+      case 'portfolio':
         return (
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
              {/* Key Metrics */}
@@ -69,15 +76,15 @@ export function DashboardClient() {
              </div>
           </div>
         );
-      case 'add-product':
+      case 'add-listing':
         return <ProductForm />;
-      case 'templates':
-        return <TemplateManager />;
-      case 'bot':
-        return <BotSettings />;
+      case 'message-kit':
+        return <TemplateList searchQuery="" />;
+      case 'ai-bot':
+        return <FlowBuilder />;
       case 'settings':
         return <SettingsView />;
-      case 'academy':
+      case 'training':
         return <TrainingView />;
       default:
         return <div>Lütfen bir sekme seçin.</div>;
@@ -86,7 +93,12 @@ export function DashboardClient() {
 
   return (
     <div className="flex min-h-screen bg-[#030712] selection:bg-accent selection:text-white overflow-hidden max-h-screen">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        isOpen={isOpen}
+        toggleSidebar={toggleSidebar}
+      />
       
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <header className="h-28 border-b border-white/5 flex items-center justify-between px-12 bg-black/20 backdrop-blur-3xl sticky top-0 z-40 shrink-0">
@@ -96,12 +108,12 @@ export function DashboardClient() {
               </div>
               <div>
                  <h2 className="text-2xl font-black text-white tracking-tighter">
-                   {activeTab === 'products' && 'Emlak Portföyünüz'}
-                   {activeTab === 'add-product' && 'Yeni Portföy Kaydı'}
-                   {activeTab === 'templates' && 'Mesaj Şablonları'}
-                   {activeTab === 'bot' && 'WhatsApp AI Ayarları'}
+                   {activeTab === 'portfolio' && 'Emlak Portföyünüz'}
+                   {activeTab === 'add-listing' && 'Yeni Portföy Kaydı'}
+                   {activeTab === 'message-kit' && 'Mesaj Şablonları'}
+                   {activeTab === 'ai-bot' && 'WhatsApp AI Ayarları'}
                    {activeTab === 'settings' && 'Kurumsal Kimlik Ayarları'}
-                   {activeTab === 'academy' && 'Emlak Satış Akademisi'}
+                   {activeTab === 'training' && 'Emlak Satış Akademisi'}
                  </h2>
                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">AI-Powered Real Estate Hub</p>
               </div>

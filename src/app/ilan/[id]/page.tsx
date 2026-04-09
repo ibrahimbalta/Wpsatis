@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Sparkles,
   Navigation,
-  Smartphone
+  Smartphone,
+  Target
 } from 'lucide-react';
 import Link from 'next/link';
 import { ImageSlider } from '@/components/ImageSlider';
@@ -154,7 +155,7 @@ export default function ListingPage({ params }: { params: { id: string } }) {
                { icon: <Navigation />, label: 'Kategori', val: listing.category }
              ].map((spec, i) => (
                 <div key={i} className="bg-white/5 border border-white/5 rounded-[40px] p-10 flex flex-col items-start gap-4 hover:bg-white/10 transition-all group shadow-xl">
-                   <div className="text-accent group-hover:scale-110 transition-transform">{React.cloneElement(spec.icon as React.ReactElement, { size: 32 })}</div>
+                   <div className="text-accent group-hover:scale-110 transition-transform">{React.cloneElement(spec.icon as any, { size: 32 })}</div>
                    <span className="text-[10px] text-slate-600 font-black uppercase tracking-[0.3em]">{spec.label}</span>
                    <span className="text-2xl font-bold text-white tracking-tighter">{spec.val}</span>
                 </div>
