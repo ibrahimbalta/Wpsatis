@@ -1,17 +1,23 @@
 import { pgTable, text, timestamp, boolean, decimal, integer } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: integer('id').generatedAlwaysAsIdentity().primaryKey(),
   clerkId: text('clerk_id').unique().notNull(), 
   email: text('email').notNull(),
   name: text('name'),
-  selectedSectorId: text('selected_sector_id'), 
+  
+  // Kurumsal Kimlik Alanları
+  companyName: text('company_name'), // Emlak Ofisi İsmi
+  logoUrl: text('logo_url'), // Ofis Logo Linki
+  whatsappNumber: text('whatsapp_number'), // Müşteri Hattı
+  
+  selectedSectorId: text('selected_sector_id').default('emlak'), 
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 export const templates = pgTable('templates', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: integer('id').generatedAlwaysAsIdentity().primaryKey(),
   userId: text('user_id').notNull(),
   sectorId: text('sector_id').notNull(),
   title: text('title').notNull(),
@@ -20,9 +26,8 @@ export const templates = pgTable('templates', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
-// Portföy / İlanlar (Modern Identity Yapısı)
 export const products = pgTable('products', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: integer('id').generatedAlwaysAsIdentity().primaryKey(),
   userId: text('user_id').notNull(),
   sectorId: text('sector_id').notNull().default('emlak'),
   
@@ -31,7 +36,6 @@ export const products = pgTable('products', {
   category: text('category').notNull(), 
   description: text('description'),
   
-  // Emlak Detayları
   rooms: text('rooms'),       
   squareMeters: integer('square_meters'),
   floorLevel: text('floor_level'),
@@ -39,12 +43,16 @@ export const products = pgTable('products', {
   isRental: boolean('is_rental').default(false),
   externalUrl: text('external_url'), 
   
+  imageUrl: text('image_url'), 
+  viewCount: integer('view_count').default(0), 
+  clickCount: integer('click_count').default(0), 
+  
   imageLabel: text('image_label'), 
   createdAt: timestamp('created_at').defaultNow(),
 });
 
 export const botRules = pgTable('bot_rules', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: integer('id').generatedAlwaysAsIdentity().primaryKey(),
   userId: text('user_id').notNull(),
   trigger: text('trigger').notNull(),
   response: text('response').notNull(),

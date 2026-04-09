@@ -1,185 +1,143 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sidebar } from '@/components/Sidebar';
-import { useSector } from '@/context/SectorContext';
-import { Search, Plus, Calculator, MessageSquare, Building2, LayoutDashboard, BookOpen, Zap, Sparkles, Database } from 'lucide-react';
-import { PricingCalculator } from '@/components/PricingCalculator';
-import { TemplateList } from '@/components/TemplateList';
-import { SalesTraining } from '@/components/SalesTraining';
-import { FlowBuilder } from '@/components/FlowBuilder';
-import { AIChatAssistant } from '@/components/AIChatAssistant';
-import { BotSimulator } from '@/components/BotSimulator';
-import { ProductList } from '@/components/ProductList';
-import { Drawer } from '@/components/Drawer';
-import { TemplateForm } from '@/components/TemplateForm';
-import { ProductForm } from '@/components/ProductForm';
+import { 
+  Building2, 
+  MessageSquare, 
+  Settings, 
+  LayoutDashboard, 
+  PlusCircle, 
+  Search,
+  Users,
+  Bell,
+  PanelLeftClose,
+  ChevronRight,
+  TrendingUp,
+  Target,
+  Clock,
+  ExternalLink,
+  Sparkles
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Sidebar } from './Sidebar';
+import { ProductForm } from './ProductForm';
+import { ProductList } from './ProductList';
+import { TemplateList } from './TemplateList';
+import { FlowBuilder } from './FlowBuilder';
+import { AIChatAssistant } from './AIChatAssistant';
+import { SettingsView } from './SettingsView'; // Yeni Kurumsal Ayarlar Paneli
 import { UserButton } from '@clerk/nextjs';
-import { seedSampleData } from '@/lib/seed';
 
-interface DashboardClientProps {
-  initialUser: any;
-}
-
-export function DashboardClient({ initialUser }: DashboardClientProps) {
-  const { currentSector } = useSector();
-  const [activeTab, setActiveTab] = useState('catalog'); // Defaulting to catalog/portfolio for real estate
+export function DashboardClient() {
+  const [activeTab, setActiveTab] = useState('portfolio');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSeeding, setIsSeeding] = useState(false);
-  
-  // Drawer States
-  const [isTemplateDrawerOpen, setIsTemplateDrawerOpen] = useState(false);
-  const [isProductDrawerOpen, setIsProductDrawerOpen] = useState(false);
 
-  const handleSeed = async () => {
-    if (!confirm('Emlakçı portföyü için örnek veriler yüklenecek. Emin misiniz?')) return;
-    setIsSeeding(true);
-    try {
-      const result = await seedSampleData();
-      alert(result.message);
-      window.location.reload(); 
-    } catch (error) {
-      alert('Hata oluştu!');
-    } finally {
-      setIsSeeding(false);
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'portfolio':
+        return (
+          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <h1 className="text-5xl font-black text-white tracking-tighter leading-none">
+                  İlan Portföyü
+                </h1>
+                <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Gayrimenkul Vitrini Yönetimi</p>
+              </div>
+              <button 
+                onClick={() => setActiveTab('add-listing')}
+                className="flex items-center gap-3 px-8 py-4 bg-accent hover:bg-accent-light text-white font-black rounded-2xl transition-all shadow-xl shadow-accent/20 active:scale-95 group"
+              >
+                <PlusCircle size={20} className="group-hover:rotate-90 transition-transform duration-500" />
+                YENİ İLAN EKLE
+              </button>
+            </div>
+            
+            <div className="relative group">
+              <input 
+                type="text"
+                placeholder="İlan adı, konum veya oda sayısı ile ara..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#0a0f1d]/60 border border-white/5 rounded-3xl px-14 py-6 text-white focus:outline-none focus:border-accent transition-all text-xl font-medium placeholder:text-slate-700 shadow-2xl"
+              />
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={24} />
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 px-3 py-1 bg-white/5 rounded-lg border border-white/5 text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:border-accent/40 transition-colors">
+                Ara (⌘+F)
+              </div>
+            </div>
+
+            <ProductList searchQuery={searchQuery} />
+          </div>
+        );
+      case 'add-listing':
+        return <ProductForm />;
+      case 'training':
+        return <AIChatAssistant />;
+      case 'message-kit':
+        return <TemplateList searchQuery={searchQuery} />;
+      case 'ai-bot':
+        return <FlowBuilder />;
+      case 'settings':
+        return <SettingsView />;
+      default:
+        return null;
     }
   };
 
-  const tabs = [
-    { id: 'catalog', label: 'Portföyüm', icon: Building2 },
-    { id: 'templates', label: 'Mesaj Kitim', icon: MessageSquare },
-    { id: 'bot', label: 'Bot Yönetimi', icon: Zap },
-    { id: 'ai', label: 'AI Danışman', icon: Sparkles },
-    { id: 'calculator', label: 'Kredi/Komisyon', icon: Calculator },
-  ];
-
   return (
-    <main className="flex min-h-screen p-4 gap-6 bg-[#030712] text-slate-200">
-      <Sidebar />
-      
-      <section className="flex-1 flex flex-col gap-8 max-w-7xl mx-auto w-full">
-        {/* Header */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-2">
-          <div className="animate-in slide-in-from-left duration-500">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="px-3 py-1 bg-accent/20 text-accent text-[10px] font-black rounded-lg tracking-widest uppercase border border-accent/20">
-                Gayrimenkul Modülü
-              </span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-none mb-2">
-              Emlak <span className="text-accent underline underline-offset-8 decoration-accent/20 italic">Portföyü</span>
-            </h1>
-            <p className="text-slate-500 max-w-md text-sm font-medium">
-              Hoş geldin, <span className="text-white font-bold">{initialUser?.name || 'Gayrimenkul Danışmanı'}</span>.
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-4 bg-slate-900/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md overflow-x-auto no-scrollbar">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 shrink-0",
-                    activeTab === tab.id 
-                      ? "bg-accent text-white shadow-2xl shadow-accent/40 scale-105" 
-                      : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
-                  )}
-                >
-                  <tab.icon size={18} />
-                  <span className="hidden md:inline">{tab.label}</span>
-                </button>
-              ))}
-            </div>
-            <div className="w-12 h-12 flex items-center justify-center bg-slate-900/40 rounded-2xl border border-white/5">
-              <UserButton />
-            </div>
-          </div>
+    <div className="flex h-screen bg-[#030712] overflow-hidden">
+      {/* Sidebar Component */}
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        isOpen={isSidebarOpen}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-[#030712] via-[#05091a] to-[#030712] relative overflow-hidden">
+        {/* Background Ambient Glows */}
+        <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-accent/5 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+
+        {/* Top Header */}
+        <header className="h-24 border-b border-white/5 flex items-center justify-between px-10 relative z-10 backdrop-blur-3xl bg-[#030712]/40">
+           <div className="flex items-center gap-6">
+              <div className="hidden md:flex flex-col">
+                 <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mb-0.5">Müşteri Potansiyeli</span>
+                 <div className="flex items-center gap-2">
+                    <TrendingUp size={14} className="text-green-500" />
+                    <span className="text-sm font-black text-white">+12% Bu Hafta</span>
+                 </div>
+              </div>
+              <div className="h-8 w-px bg-white/5 hidden md:block" />
+              <div className="flex items-center gap-3 group cursor-pointer">
+                 <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
+                    <Target size={20} />
+                 </div>
+                 <span className="text-sm font-black text-slate-400 group-hover:text-white transition-colors">Portföy Analizi</span>
+              </div>
+           </div>
+
+           <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/5">
+                 <button className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-white transition-colors relative">
+                    <Bell size={20} />
+                    <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-accent rounded-full border-2 border-[#030712]" />
+                 </button>
+                 <div className="w-px h-6 bg-white/10 mx-1" />
+                 <UserButton afterSignOutUrl="/" />
+              </div>
+           </div>
         </header>
 
-        {/* Search & Actions Bar */}
-        {activeTab !== 'calculator' && activeTab !== 'bot' && activeTab !== 'ai' && (
-          <div className="flex flex-col md:flex-row items-center gap-4 px-2 animate-in fade-in slide-in-from-top-4 duration-500 delay-150">
-            <div className="relative flex-1 w-full group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5 group-focus-within:text-accent transition-colors" />
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`${activeTab === 'templates' ? 'Mesaj şablonu' : 'İlan, konum veya mülk tipi'} ara...`} 
-                className="w-full bg-slate-900/50 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 transition-all font-medium placeholder:text-slate-600"
-              />
-            </div>
-            <button 
-              onClick={() => {
-                if (activeTab === 'templates') setIsTemplateDrawerOpen(true);
-                if (activeTab === 'catalog') setIsProductDrawerOpen(true);
-              }}
-              className="glass-button w-full md:w-auto h-14 px-8 shadow-xl shadow-accent/10 group bg-accent hover:bg-accent-light border-none"
-            >
-              <Plus size={20} className="stroke-[3px] group-hover:rotate-90 transition-transform" />
-              <span className="font-black uppercase tracking-tight">Yeni {activeTab === 'templates' ? 'Şablon' : 'İlan'} Ekle</span>
-            </button>
-          </div>
-        )}
-
-        {/* Dynamic Content Area */}
-        <div className="flex-1 px-2 pb-8 overflow-x-hidden">
-          {activeTab === 'templates' && (
-            <TemplateList searchQuery={searchQuery} />
-          )}
-
-          {activeTab === 'bot' && (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-               <div className="xl:col-span-2">
-                  <FlowBuilder />
-               </div>
-               <div className="xl:col-span-1 border-l border-white/5 pl-8 hidden xl:block">
-                  <BotSimulator />
-               </div>
-            </div>
-          )}
-
-          {activeTab === 'ai' && (
-            <AIChatAssistant />
-          )}
-
-          {activeTab === 'calculator' && (
-            <div className="flex justify-center animate-in zoom-in-95 duration-500">
-              <PricingCalculator />
-            </div>
-          )}
-
-          {activeTab === 'catalog' && (
-            <ProductList searchQuery={searchQuery} />
-          )}
+        {/* Dynamic Tab Content */}
+        <div className="flex-1 overflow-y-auto p-10 relative z-10 no-scrollbar">
+          {renderContent()}
         </div>
-      </section>
-
-      {/* Drawers */}
-      <Drawer 
-        isOpen={isTemplateDrawerOpen} 
-        onClose={() => setIsTemplateDrawerOpen(false)} 
-        title="Yeni Mesaj Şablonu"
-      >
-        <TemplateForm onSuccess={() => {
-          setIsTemplateDrawerOpen(false);
-          window.location.reload();
-        }} />
-      </Drawer>
-
-      <Drawer 
-        isOpen={isProductDrawerOpen} 
-        onClose={() => setIsProductDrawerOpen(false)} 
-        title="Yeni Portföy Kaydı"
-      >
-        <ProductForm onSuccess={() => {
-          setIsProductDrawerOpen(false);
-          window.location.reload();
-        }} />
-      </Drawer>
-    </main>
+      </main>
+    </div>
   );
 }

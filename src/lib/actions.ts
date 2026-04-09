@@ -2,11 +2,11 @@
 
 import { db } from '@/db';
 import { products, templates, botRules, users } from '@/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { auth, currentUser } from '@clerk/nextjs/server';
 
-// Kullanıcıyı veritabanı ile eşleştirme
+// Kullanıcıyı veritabanı ile eşleştirme ve Profil Bilgilerini Getirme
 export async function syncUser() {
   const { userId } = await auth();
   const user = await currentUser();
@@ -24,6 +24,50 @@ export async function syncUser() {
   }
 
   return userId;
+}
+
+// Kullanıcı Profil Bilgilerini Getir
+export async function getUserProfile() {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  const data = await db.select().from(users).where(eq(users.clerkId, userId));
+  return data.length > 0 ? data[0] : null;
+}
+
+// Kullanıcı Profilini Güncelle (Kurumsal Kimlik)
+export async function updateUserProfile(formData: FormData) {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+
+  const companyName = formData.get('companyName') as string;
+  const logoUrl = formData.get('logoUrl') as string;
+  const whatsappNumber = formData.get('whatsappNumber') as string;
+
+  await db.update(users)
+    .set({
+      companyName,
+      logoUrl,
+      whatsappNumber,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.clerkId, userId));
+
+  revalidatePath('/');
+}
+
+// Analitik: Görüntülenme Sayısını Artır
+export async function incrementViewCount(id: number) {
+  await db.update(products)
+    .set({ viewCount: sql`${products.viewCount} + 1` })
+    .where(eq(products.id, id));
+}
+
+// Analitik: WhatsApp Tıklama Sayısını Artır
+export async function incrementClickCount(id: number) {
+  await db.update(products)
+    .set({ clickCount: sql`${products.clickCount} + 1` })
+    .where(eq(products.id, id));
 }
 
 // İlanları Getir
@@ -68,6 +112,7 @@ export async function createProduct(formData: FormData) {
   const price = formData.get('price') as string;
   const category = formData.get('category') as string;
   const description = formData.get('description') as string;
+  const imageUrl = formData.get('imageUrl') as string;
   
   const rooms = formData.get('rooms') as string;
   const squareMeters = parseInt(formData.get('squareMeters') as string) || 0;
@@ -82,6 +127,7 @@ export async function createProduct(formData: FormData) {
     price,
     category,
     description,
+    imageUrl,
     rooms,
     squareMeters,
     floorLevel,

@@ -8,21 +8,22 @@ import { products } from '@/db/schema';
 import { ilike, or, and, eq } from 'drizzle-orm';
 
 export async function chatWithEmlakAI(messages: any[]) {
-  // Not: Emlakçı uzmanı asistanı için Gemini-1.5-Flash kullanıyoruz
+  // Not: Base URL'i env'den veya window'dan almak gerekebilir
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://wpsatis.vercel.app';
+
   const result = await streamText({
     model: google('gemini-1.5-flash'),
     system: `Sen profesyonel bir Gayrimenkul Satış Uzmanısın. 
     Görevin müşteriden gelen mesajları analiz etmek ve veritabanındaki portföyümüzü kullanarak en uygun gayrimenkulü önermektir.
-    Veritabanında arama yapmak için 'searchListings' aracını kullanmalısın.
-    Eğer uygun bir ilan bulursan, detaylarını (fiyat, m2, konum) profesyonel ve ikna edici bir dille sun.
-    Eğer hiç ilan bulamazsan, 'Şu an tam istediğiniz kriterde bir ilanım yok ama alternatiflere bakabilirim' de.`,
+    İlanları sunarken mutlaka ilan ID'sini kullanarak şu formatta link vermelisin: ${baseUrl}/ilan/[ID]
+    Önemli: Linkleri 'Şu linkten detaylara bakabilirsiniz: ...' şeklinde profesyonelce sun.`,
     messages,
     tools: {
       searchListings: tool({
-        description: 'Veritabanındaki emlak ilanlarını isim, konum veya açıklamaya göre arar.',
+        description: 'Veritabanındaki emlak ilanlarını arar ve detaylı bilgiler ile ID'yi döner.',
         parameters: z.object({
           query: z.string().describe('Aranacak kelime (konum, mülk tipi vb.)'),
-          isRental: z.boolean().optional().describe('Kiralık mı satılık mı?'),
+          isRental: z.boolean().optional(),
         }),
         execute: async ({ query, isRental }) => {
           const results = await db.select().from(products).where(
@@ -30,7 +31,7 @@ export async function chatWithEmlakAI(messages: any[]) {
               or(
                 ilike(products.name, `%${query}%`),
                 ilike(products.location, `%${query}%`),
-                ilike(products.description, `%${query}%`)
+                ilike(products.category, `%${query}%`)
               ),
               isRental !== undefined ? eq(products.isRental, isRental) : undefined
             )
