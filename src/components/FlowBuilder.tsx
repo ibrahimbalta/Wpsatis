@@ -1,41 +1,33 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { 
-  Zap, 
-  MessageSquare, 
-  Trash2, 
-  Plus, 
-  ChevronRight, 
-  Settings2,
-  Package,
-  MapPin,
-  Clock,
-  Loader2
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { getBotRules, createBotRule } from '@/lib/actions';
+import { Sparkles, Power, AlertCircle } from 'lucide-react';
+import { getBotRules, createBotRule, toggleBotRule, deleteBotRule } from '@/lib/actions';
 
 interface BotRule {
-  id: string;
+  id: number;
   trigger: string;
   response: string;
   actionType: string;
+  isAiFallback: boolean;
   isActive: boolean;
 }
 
 export function FlowBuilder() {
   const [rules, setRules] = useState<BotRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newRule, setNewRule] = useState({ trigger: '', response: '', actionType: 'text' });
+  const [newRule, setNewRule] = useState({ 
+    trigger: '', 
+    response: '', 
+    actionType: 'text',
+    isAiFallback: false 
+  });
+
+  const fetchRules = async () => {
+    setIsLoading(true);
+    const data = await getBotRules();
+    setRules(data as any);
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    async function fetchRules() {
-      setIsLoading(true);
-      const data = await getBotRules();
-      setRules(data as any);
-      setIsLoading(false);
-    }
     fetchRules();
   }, []);
 
@@ -44,14 +36,38 @@ export function FlowBuilder() {
     
     setIsLoading(true);
     try {
-      await createBotRule(newRule);
-      const data = await getBotRules();
-      setRules(data as any);
-      setNewRule({ trigger: '', response: '', actionType: 'text' });
+      const formData = new FormData();
+      formData.append('trigger', newRule.trigger);
+      formData.append('response', newRule.response);
+      formData.append('actionType', newRule.actionType);
+      formData.append('isAiFallback', String(newRule.isAiFallback));
+      
+      await createBotRule(formData);
+      await fetchRules();
+      setNewRule({ trigger: '', response: '', actionType: 'text', isAiFallback: false });
     } catch (error) {
       alert('Kural eklenirken hata oluştu!');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleToggle = async (id: number, current: boolean) => {
+    try {
+      await toggleBotRule(id, !current);
+      await fetchRules();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Bu kuralı silmek istediğinize emin misiniz?')) return;
+    try {
+      await deleteBotRule(id);
+      await fetchRules();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -74,115 +90,158 @@ export function FlowBuilder() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+    <div className="max-w-6xl mx-auto animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center text-accent">
-              <Zap size={24} />
+            <div className="w-12 h-12 bg-accent/20 rounded-2xl flex items-center justify-center text-accent shadow-lg border border-accent/20">
+              <Zap size={28} />
             </div>
-            <h2 className="text-3xl font-black text-white tracking-tight">Bot Akış Kurgulayıcı</h2>
+            <div>
+              <h2 className="text-3xl font-black text-white tracking-tight">Akış Kurgulayıcı</h2>
+              <p className="text-slate-500 font-medium text-sm">WhatsApp botunuzun nasıl tepki vereceğini tasarlayın.</p>
+            </div>
           </div>
-          <p className="text-slate-500 font-medium">Anahtar kelimelere göre otomatik yanıtlar tanımlayın.</p>
         </div>
         
-        <div className="flex items-center gap-3 bg-slate-900/50 p-2 rounded-2xl border border-glass-border">
-          <span className="text-xs font-bold text-slate-400 px-3 uppercase tracking-widest">Bot Durumu</span>
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-500 rounded-xl border border-green-500/20">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm font-black uppercase tracking-tighter">Aktif</span>
-          </div>
+        <div className="flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/5 backdrop-blur-xl">
+           <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-500 rounded-xl border border-green-500/20">
+             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+             <span className="text-[10px] font-black uppercase tracking-widest">Sistem Online</span>
+           </div>
+           <div className="flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-xl border border-accent/20">
+             <Sparkles size={14} />
+             <span className="text-[10px] font-black uppercase tracking-widest">AI Hibrit Aktif</span>
+           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* New Rule Form */}
-        <div className="lg:col-span-1 flex flex-col gap-6">
-          <div className="glass-card p-6 border-accent/20">
-            <h3 className="text-lg font-bold text-white mb-4">Yeni Kural Ekle</h3>
-            <div className="space-y-4">
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <div className="glass-card p-8 border-accent/20 sticky top-32">
+            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+               <Plus className="text-accent" />
+               Yeni Akış Ekle
+            </h3>
+            <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Tetikleyici Kelime</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block ml-1">Tetikleyici Kelime (Trigger)</label>
                 <input 
                   type="text" 
                   value={newRule.trigger}
                   onChange={(e) => setNewRule({...newRule, trigger: e.target.value})}
-                  placeholder="Örn: fiyat, katalog..."
-                  className="w-full bg-slate-800/50 border border-glass-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-all text-sm font-medium"
+                  placeholder="Örn: fiyat, konum, selam..."
+                  className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 transition-all text-sm font-bold placeholder:text-slate-700"
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Botun Yanıtı</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2 block ml-1">Otomatik Yanıt (Response)</label>
                 <textarea 
                   rows={4}
                   value={newRule.response}
                   onChange={(e) => setNewRule({...newRule, response: e.target.value})}
                   placeholder="Müşteriye gidecek mesaj..."
-                  className="w-full bg-slate-800/50 border border-glass-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-all text-sm font-medium resize-none"
+                  className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 transition-all text-sm font-medium resize-none placeholder:text-slate-700"
                 />
               </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 block">Yanıt Tipi</label>
-                <select 
-                  value={newRule.actionType}
-                  onChange={(e) => setNewRule({...newRule, actionType: e.target.value as any})}
-                  className="w-full bg-slate-800/50 border border-glass-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition-all text-sm font-medium"
-                >
-                  <option value="text">Düz Metin</option>
-                  <option value="catalog">Katalog / Ürün Listesi</option>
-                  <option value="location">Konum Paylaşımı</option>
-                  <option value="transfer">Temsilciye Aktar</option>
-                </select>
+              
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                      <Sparkles size={14} className="text-accent" />
+                      <span className="text-xs font-bold text-slate-200">AI Fallback</span>
+                   </div>
+                   <button 
+                     onClick={() => setNewRule({...newRule, isAiFallback: !newRule.isAiFallback})}
+                     className={cn(
+                       "w-10 h-5 rounded-full transition-all relative flex items-center px-1",
+                       newRule.isAiFallback ? "bg-accent" : "bg-slate-700"
+                     )}
+                   >
+                     <motion.div 
+                       animate={{ x: newRule.isAiFallback ? 20 : 0 }}
+                       className="w-3 h-3 bg-white rounded-full shadow-lg" 
+                     />
+                   </button>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-relaxed italic">Eğer bu kural tek başına yetersiz kalırsa AI motoru bağlamı tamamlamak için devreye girer.</p>
               </div>
+
               <button 
                 onClick={handleAddRule}
                 disabled={isLoading}
-                className="w-full py-4 bg-accent hover:bg-accent-light text-white font-black rounded-xl transition-all shadow-xl shadow-accent/20 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-5 bg-accent hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] text-white font-black rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 shadow-xl"
               >
                 {isLoading ? <Loader2 className="animate-spin" /> : <Plus size={20} className="stroke-[3px]" />}
-                Kuralı Oluştur
+                AKIDŞI KAYDET
               </button>
             </div>
           </div>
         </div>
 
         {/* Rules List */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-8 space-y-6">
           {rules.map((rule) => (
-            <div key={rule.id} className={cn(
-              "glass-card p-5 group transition-all duration-300",
-              !rule.isActive && "opacity-50 grayscale-[0.5]"
-            )}>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="px-3 py-1 bg-accent/20 text-accent text-[10px] font-black rounded-lg uppercase tracking-widest border border-accent/20">
+            <motion.div 
+              layout
+              key={rule.id} 
+              className={cn(
+                "glass-card p-6 group transition-all duration-300 relative overflow-hidden",
+                !rule.isActive && "opacity-60 grayscale-[0.8]"
+              )}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="px-4 py-2 bg-accent/20 text-accent text-[11px] font-black rounded-xl uppercase tracking-[0.1em] border border-accent/20">
                     IF: {rule.trigger}
                   </div>
-                  <ChevronRight size={14} className="text-slate-600" />
-                  <div className="flex items-center gap-2 px-3 py-1 bg-slate-800 text-slate-400 text-[10px] font-black rounded-lg uppercase tracking-widest border border-glass-border">
+                  <ChevronRight size={18} className="text-slate-600" />
+                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-slate-300 text-[11px] font-black rounded-xl uppercase tracking-[0.1em] border border-white/5">
                     {getActionIcon(rule.actionType)}
                     DO: {rule.actionType}
                   </div>
+                  {rule.isAiFallback && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 text-purple-400 text-[9px] font-black rounded-lg uppercase border border-purple-500/20">
+                       <Sparkles size={10} />
+                       AI-POWERED
+                    </div>
+                  )}
                 </div>
                 
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="p-2 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all">
-                    <Trash2 size={16} />
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => handleToggle(rule.id, rule.isActive)}
+                    className={cn(
+                      "p-3 rounded-xl transition-all border",
+                      rule.isActive ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-slate-700 text-slate-400 border-slate-600"
+                    )}
+                  >
+                    <Power size={18} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(rule.id)}
+                    className="p-3 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-all border border-red-500/10"
+                  >
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>
               
-              <div className="p-4 bg-slate-900/50 rounded-xl border border-glass-border/50">
-                <p className="text-sm text-slate-300 font-medium italic">"{rule.response}"</p>
+              <div className="p-6 bg-black/20 rounded-2xl border border-white/5 relative group-hover:border-accent/20 transition-colors">
+                <div className="absolute top-4 right-4 text-slate-800/20"><MessageSquare size={40} /></div>
+                <p className="text-slate-300 font-medium leading-relaxed relative z-10">"{rule.response}"</p>
               </div>
-            </div>
+            </motion.div>
           ))}
           
           {rules.length === 0 && !isLoading && (
-            <div className="py-12 flex flex-col items-center justify-center text-slate-500 glass-card">
-              <Clock size={48} className="mb-4 opacity-20" />
-              <p className="font-bold">Henüz bir kural tanımlanmadı.</p>
-              <p className="text-sm">Müşteri mesajlarını otomatize etmek için ilk kuralınızı ekleyin.</p>
+            <div className="py-24 flex flex-col items-center justify-center text-slate-500 glass-card border-dashed">
+              <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center mb-6 text-slate-700">
+                <AlertCircle size={40} />
+              </div>
+              <h4 className="text-xl font-bold text-white mb-2">Henüz Bir Akış Yok</h4>
+              <p className="text-sm max-w-xs text-center">WhatsApp botunuzun zekasını artırmak için soldaki paneli kullanarak ilk kuralı tanımlayın.</p>
             </div>
           )}
         </div>

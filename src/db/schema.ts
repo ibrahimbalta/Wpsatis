@@ -65,6 +65,7 @@ export const botRules = pgTable('bot_rules', {
   trigger: text('trigger').notNull(),
   response: text('response').notNull(),
   actionType: text('action_type').notNull().default('text'),
+  isAiFallback: boolean('is_ai_fallback').default(false), // Kural bulunamazsa AI'ya devret
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow(),
 });

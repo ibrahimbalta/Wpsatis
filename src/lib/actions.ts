@@ -118,6 +118,35 @@ export async function getBotRules() {
 export async function createBotRule(formData: FormData) {
   const { userId } = await auth();
   if (!userId) throw new Error('Unauthorized');
-  await db.insert(botRules).values({ userId, trigger: formData.get('trigger') as string, response: formData.get('response') as string, actionType: 'text' });
+  
+  await db.insert(botRules).values({ 
+    userId, 
+    trigger: formData.get('trigger') as string, 
+    response: formData.get('response') as string, 
+    actionType: formData.get('actionType') as string || 'text',
+    isAiFallback: formData.get('isAiFallback') === 'true'
+  });
+  
+  revalidatePath('/');
+}
+
+export async function toggleBotRule(id: number, isActive: boolean) {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+  
+  await db.update(botRules)
+    .set({ isActive })
+    .where(and(eq(botRules.id, id), eq(botRules.userId, userId)));
+    
+  revalidatePath('/');
+}
+
+export async function deleteBotRule(id: number) {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+  
+  await db.delete(botRules)
+    .where(and(eq(botRules.id, id), eq(botRules.userId, userId)));
+    
   revalidatePath('/');
 }

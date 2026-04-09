@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { botRules, products } from '@/db/schema';
-import { eq, ilike, or } from 'drizzle-orm';
-import { google } from '@ai-sdk/google';
-import { generateText, tool } from 'ai';
-import { z } from 'zod';
+import { botRules, users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { chatWithEmlakAI } from '@/lib/ai-actions';
 
-// Not: Bu Webhook, Whapi.cloud veya Evolution API gibi sağlayıcılarla uyumludur.
+/**
+ * WhatsApp Webhook: Hybrid AI/Rule Model
+ * 1. Sabit Kuralları Kontrol Et (Triggers)
+ * 2. Eğer kuralda 'isAiFallback' varsa veya kural yoksa AI'yı kullan
+ */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    
-    // 1. Gelen mesaj verisini ayıkla (Whapi yapısına göre örneklendi)
     const messages = body.messages || [];
     if (messages.length === 0) return NextResponse.json({ ok: true });
 
@@ -20,46 +20,43 @@ export async function POST(req: Request) {
     const text = msg.text?.body || '';
     const fromMe = msg.fromMe || false;
 
-    // 2. KRİTİK FİLTRE: Eğer mesaj benden çıkmışsa veya bir GRUP mesajıysa İŞLEME
-    // WhatsApp'ta grup ID'leri genellikle 'g.us' ile biter.
+    // 1. Filtreleme: Benden çıkan veya grup mesajlarını atla
     if (fromMe || chatId.includes('@g.us')) {
-      console.log('Grup mesajı veya benden çıkan mesaj, atlanıyor...');
       return NextResponse.json({ ok: true, status: 'ignored' });
     }
 
-    // 3. Sabit Kural Kontrolü (Quick Replies)
+    // 2. Kullanıcı Ayarlarını ve Kuralları Al
+    // Not: Gerçek senaryoda bu webhook'un hangi kullanıcıya ait olduğunu belirlemek için
+    // URL parametresi veya sağlayıcı verisi kullanılır. Örnek olarak ilk kullanıcıyı alıyoruz.
+    const user = await db.query.users.findFirst();
+    if (!user) return NextResponse.json({ ok: true, status: 'no_user' });
+
     const rules = await db.select().from(botRules).where(eq(botRules.isActive, true));
     const matchedRule = rules.find(r => text.toLowerCase().includes(r.trigger.toLowerCase()));
 
+    let finalResponse = '';
+
+    // 3. Akış Mantığı
     if (matchedRule) {
-      await sendWhatsAppMessage(chatId, matchedRule.response);
-      return NextResponse.json({ ok: true });
+      finalResponse = matchedRule.response;
+      
+      // Eğer kuralda AI Fallback aktifse, AI ile bağlamı zenginleştir
+      if (matchedRule.isAiFallback) {
+         const { text: aiContext } = await chatWithEmlakAI([
+           { role: 'user', content: text },
+           { role: 'assistant', content: `Bu kural gereği şu cevabı veriyorum: ${matchedRule.response}. Lütfen bu cevabı temel alarak müşteriye daha doğal ve detaylı yardımcı ol.` }
+         ]);
+         finalResponse = aiContext;
+      }
+    } else if (user.isAiEnabled) {
+      // Kural yok ama Global AI aktif
+      const { text: aiContext } = await chatWithEmlakAI([{ role: 'user', content: text }]);
+      finalResponse = aiContext;
     }
 
-    // 4. AI Emlak Asistanını Devreye Sok (Eğer kural yoksa)
-    const { text: aiResponse } = await generateText({
-      model: google('gemini-1.5-flash'),
-      system: `Sen bir emlak uzmanısın. Portföyümüzdeki ilanları tarayarak müşteriye cevap ver. 
-      Eğer grup mesajı değilse (zaten filtrelendi) sıcak ve profesyonel davran.`,
-      prompt: text,
-      tools: {
-        searchListings: tool({
-          description: 'Emlak ilanlarını arar.',
-          parameters: z.object({ query: z.string() }),
-          execute: async ({ query }) => {
-            return await db.select().from(products).where(
-              or(
-                ilike(products.name, `%${query}%`),
-                ilike(products.location, `%${query}%`)
-              )
-            );
-          },
-        }),
-      },
-    });
-
-    if (aiResponse) {
-      await sendWhatsAppMessage(chatId, aiResponse);
+    // 4. Yanıtı Gönder
+    if (finalResponse) {
+      await sendWhatsAppMessage(chatId, finalResponse);
     }
 
     return NextResponse.json({ ok: true });
@@ -69,13 +66,9 @@ export async function POST(req: Request) {
   }
 }
 
-// WhatsApp Sağlayıcısına Mesaj Gönderme (Örn: Whapi API)
 async function sendWhatsAppMessage(to: string, text: string) {
   const WHAPI_TOKEN = process.env.WHAPI_TOKEN;
-  if (!WHAPI_TOKEN) {
-    console.warn('WHAPI_TOKEN eksik, mesaj gönderilemedi!');
-    return;
-  }
+  if (!WHAPI_TOKEN) return;
 
   try {
     await fetch('https://gate.whapi.cloud/messages/text', {
@@ -84,13 +77,9 @@ async function sendWhatsAppMessage(to: string, text: string) {
         'Authorization': `Bearer ${WHAPI_TOKEN}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        typing_time: 2,
-        to: to,
-        body: text
-      })
+      body: JSON.stringify({ typing_time: 2, to, body: text })
     });
   } catch (err) {
-    console.error('Mesaj gönderme hatası:', err);
+    console.error('Send Error:', err);
   }
 }

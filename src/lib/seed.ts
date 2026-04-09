@@ -34,20 +34,61 @@ export async function seedSampleData() {
   }
 
   // Insert Products
-  const productsToInsert = mockProducts.map(p => ({
-    userId,
-    sectorId: p.sectorId,
-    name: p.name,
-    price: p.price.toString(),
-    category: p.category,
-    description: p.description,
-    imageLabel: p.imageLabel,
-  }));
+  const productsToInsert = [
+    {
+      userId,
+      sectorId: 'emlak',
+      name: 'Modern Mimari - Boğaz Manzaralı Villa',
+      price: '125000000',
+      category: 'Villa',
+      rooms: '6+2',
+      squareMeters: 450,
+      location: 'Beşiktaş, İstanbul',
+      imageUrl: '/demo/villa.png',
+      description: 'Eşsiz mimarisi ve kesintisiz manzara.'
+    },
+    {
+      userId,
+      sectorId: 'emlak',
+      name: 'Minimalist Penthouse - Şehir Kalbi',
+      price: '45000000',
+      category: 'Residence',
+      rooms: '3+1',
+      squareMeters: 220,
+      location: 'Şişli, İstanbul',
+      imageUrl: '/demo/apartment.png',
+      description: 'Lüksün ve konforun buluştuğu nokta.'
+    },
+    {
+      userId,
+      sectorId: 'emlak',
+      name: 'Doğa ile İç İçe - Bahçeli Malikane',
+      price: '32000000',
+      category: 'Müstakil',
+      rooms: '4+1',
+      squareMeters: 300,
+      location: 'Beykoz, İstanbul',
+      imageUrl: '/demo/garden.png',
+      description: 'Huzurlu bir yaşam alanı.'
+    },
+    ...mockProducts.map(p => ({
+      userId,
+      sectorId: p.sectorId,
+      name: p.name,
+      price: p.price.toString(),
+      category: p.category,
+      description: p.description,
+      rooms: '3+1',
+      squareMeters: 120,
+      location: 'İstanbul',
+      imageUrl: ''
+    }))
+  ];
 
   if (productsToInsert.length > 0) {
     await db.insert(products).values(productsToInsert);
   }
 
   revalidatePath('/');
-  return { success: true, message: '15 sektörlük örnek veri başarıyla yüklendi!' };
+  return { success: true, message: 'Lüks portföy ve örnek veriler başarıyla yüklendi!' };
 }

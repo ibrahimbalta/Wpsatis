@@ -48,14 +48,42 @@ const SCENARIOS = [
 export function TrainingView() {
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
   const [isStarted, setIsStarted] = useState(false);
+  const [metrics, setMetrics] = useState({ persuasion: 30, trust: 50, tip: 'Başlamak için ilk mesajınızı yazın.' });
   
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, data } = useChat({
     api: '/api/academy',
     body: { scenario: selectedScenario },
     initialMessages: [
       { id: '1', role: 'assistant', content: 'Merhaba, bugün hangi konuda kendinizi geliştirmek istersiniz? Lütfen bir senaryo seçin.' }
-    ]
+    ],
+    onFinish: () => {
+       // useChat provides data as an array, we take the last one
+       if (data && data.length > 0) {
+         const lastData: any = data[data.length - 1];
+         if (lastData.type === 'analysis') {
+           setMetrics({
+             persuasion: lastData.persuasion,
+             trust: lastData.trust,
+             tip: lastData.tip
+           });
+         }
+       }
+    }
   });
+
+  // Watch data updates in real-time if possible, or just on finish
+  useEffect(() => {
+    if (data && data.length > 0) {
+      const lastData: any = data[data.length - 1];
+      if (lastData.type === 'analysis') {
+        setMetrics({
+          persuasion: lastData.persuasion,
+          trust: lastData.trust,
+          tip: lastData.tip
+        });
+      }
+    }
+  }, [data]);
 
   const handleStart = (id: string) => {
     setSelectedScenario(id);
@@ -178,27 +206,41 @@ export function TrainingView() {
               <div className="glass-card p-10 space-y-8 flex-1 border-white/5 bg-[#0a0f1d]/40 shadow-2xl">
                  <div className="flex items-center gap-3 border-b border-white/5 pb-6">
                     <BrainCircuit size={28} className="text-secondary" />
-                    <h3 className="text-xl font-black text-white">Performans Analizi</h3>
-                 </div>
-
-                 <div className="space-y-10">
+                    <h3 className="                  <div className="space-y-10">
                     <div className="space-y-4">
                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                           <span className="text-white">İKNA SEVİYESİ</span>
-                          <span className="text-accent">Düşük</span>
+                          <span className={cn(
+                            metrics.persuasion > 70 ? "text-accent" : 
+                            metrics.persuasion > 40 ? "text-secondary" : "text-orange-400"
+                          )}>{metrics.persuasion}%</span>
                        </div>
                        <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-                          <div className="h-full bg-accent w-[30%] shadow-[0_0_15px_rgba(255,59,48,0.4)]" />
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${metrics.persuasion}%` }}
+                            transition={{ duration: 1, ease: 'easeOut' }}
+                            className={cn(
+                              "h-full shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-colors",
+                              metrics.persuasion > 70 ? "bg-accent" : 
+                              metrics.persuasion > 40 ? "bg-secondary" : "bg-orange-400"
+                            )} 
+                          />
                        </div>
                     </div>
 
                     <div className="space-y-4">
                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                           <span className="text-white">GÜVEN SKORU</span>
-                          <span className="text-secondary">Yüksek</span>
+                          <span className="text-secondary">{metrics.trust}%</span>
                        </div>
                        <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-                          <div className="h-full bg-secondary w-[75%] shadow-[0_0_15px_rgba(0,196,255,0.4)]" />
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${metrics.trust}%` }}
+                            transition={{ duration: 1, ease: 'easeOut' }}
+                            className="h-full bg-secondary shadow-[0_0_15px_rgba(0,196,255,0.4)]" 
+                          />
                        </div>
                     </div>
                  </div>
@@ -208,8 +250,19 @@ export function TrainingView() {
                        <AlertCircle size={18} />
                        AI KOÇ ÖNERİSİ
                     </div>
-                    <p className="text-slate-400 text-sm leading-relaxed font-medium italic">
-                      "Müşteri şu an fiyata takılmış durumda. Ona fiyattan bahsetmek yerine yaşam kalitesi ve yatırımın gelecekteki değerinden bahsetmeyi deneyin."
+                    <AnimatePresence mode="wait">
+                      <motion.p 
+                        key={metrics.tip}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="text-slate-400 text-sm leading-relaxed font-medium italic"
+                      >
+                        "{metrics.tip}"
+                      </motion.p>
+                    </AnimatePresence>
+                 </div>
+�rımın gelecekteki değerinden bahsetmeyi deneyin."
                     </p>
                  </div>
               </div>
