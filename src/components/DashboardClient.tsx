@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { useSector } from '@/context/SectorContext';
-import { Search, Plus, Calculator, MessageSquare, Package, LayoutDashboard, BookOpen, Zap, Sparkles } from 'lucide-react';
+import { Search, Plus, Calculator, MessageSquare, Package, LayoutDashboard, BookOpen, Zap, Sparkles, Database } from 'lucide-react';
 import { PricingCalculator } from '@/components/PricingCalculator';
 import { TemplateList } from '@/components/TemplateList';
 import { SalesTraining } from '@/components/SalesTraining';
@@ -11,17 +11,40 @@ import { FlowBuilder } from '@/components/FlowBuilder';
 import { AIChatAssistant } from '@/components/AIChatAssistant';
 import { BotSimulator } from '@/components/BotSimulator';
 import { ProductList } from '@/components/ProductList';
+import { Drawer } from '@/components/Drawer';
+import { TemplateForm } from '@/components/TemplateForm';
+import { ProductForm } from '@/components/ProductForm';
 import { cn } from '@/lib/utils';
 import { UserButton } from '@clerk/nextjs';
+import { seedSampleData } from '@/lib/seed';
 
 interface DashboardClientProps {
   initialUser: any;
 }
 
 export function DashboardClient({ initialUser }: DashboardClientProps) {
-  const { currentSector, isLoading } = useSector();
+  const { currentSector } = useSector();
   const [activeTab, setActiveTab] = useState('templates');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSeeding, setIsSeeding] = useState(false);
+  
+  // Drawer States
+  const [isTemplateDrawerOpen, setIsTemplateDrawerOpen] = useState(false);
+  const [isProductDrawerOpen, setIsProductDrawerOpen] = useState(false);
+
+  const handleSeed = async () => {
+    if (!confirm('15 sektörlük örnek veriler yüklenecek. Emin misiniz?')) return;
+    setIsSeeding(true);
+    try {
+      const result = await seedSampleData();
+      alert(result.message);
+      window.location.reload(); 
+    } catch (error) {
+      alert('Hata oluştu!');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const tabs = [
     { id: 'templates', label: 'Şablonlar', icon: MessageSquare },
@@ -44,7 +67,14 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
               <span className="px-3 py-1 bg-accent/20 text-accent text-[10px] font-black rounded-lg tracking-widest uppercase border border-accent/20">
                 {currentSector?.name} Modülü
               </span>
-              <div className="h-1 w-12 bg-accent/30 rounded-full" />
+              <button 
+                onClick={handleSeed}
+                disabled={isSeeding}
+                className="flex items-center gap-2 px-3 py-1 bg-white/5 hover:bg-white/10 text-slate-400 text-[10px] font-black rounded-lg tracking-widest uppercase border border-glass-border transition-all disabled:opacity-50"
+              >
+                <Database size={12} />
+                {isSeeding ? 'YÜKLENİYOR...' : 'ÖRNEK VERİLERİ YÜKLE'}
+              </button>
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-none mb-2">
               {activeTab === 'bot' ? 'Bot' : activeTab === 'ai' ? 'AI' : 'Satış'}{' '}
@@ -52,9 +82,6 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
             </h1>
             <p className="text-slate-500 max-w-md text-sm font-medium">
               Hoş geldin, <span className="text-white font-bold">{initialUser?.name || 'Kullanıcı'}</span>.
-              {activeTab === 'bot' 
-                ? ' Otomatik yanıt akışları ile 7/24 satış yapmaya devam edin.' 
-                : ' Mesaj şablonları ve hızlı araçlar ile satış sürecinizi hızlandırın.'}
             </p>
           </div>
           
@@ -77,7 +104,7 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
               ))}
             </div>
             <div className="w-12 h-12 flex items-center justify-center bg-slate-900/40 rounded-2xl border border-glass-border">
-              <UserButton afterSignOutUrl="/sign-in" />
+              <UserButton />
             </div>
           </div>
         </header>
@@ -95,8 +122,14 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
                 className="w-full bg-slate-900/50 border border-glass-border rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 transition-all font-medium"
               />
             </div>
-            <button className="glass-button w-full md:w-auto h-14 px-8 shadow-xl shadow-accent/10">
-              <Plus size={20} className="stroke-[3px]" />
+            <button 
+              onClick={() => {
+                if (activeTab === 'templates') setIsTemplateDrawerOpen(true);
+                if (activeTab === 'catalog') setIsProductDrawerOpen(true);
+              }}
+              className="glass-button w-full md:w-auto h-14 px-8 shadow-xl shadow-accent/10 group"
+            >
+              <Plus size={20} className="stroke-[3px] group-hover:rotate-90 transition-transform" />
               <span className="font-bold">Yeni Kayıt</span>
             </button>
           </div>
@@ -138,6 +171,29 @@ export function DashboardClient({ initialUser }: DashboardClientProps) {
           )}
         </div>
       </section>
+
+      {/* Drawers */}
+      <Drawer 
+        isOpen={isTemplateDrawerOpen} 
+        onClose={() => setIsTemplateDrawerOpen(false)} 
+        title="Yeni Şablon Ekle"
+      >
+        <TemplateForm onSuccess={() => {
+          setIsTemplateDrawerOpen(false);
+          window.location.reload();
+        }} />
+      </Drawer>
+
+      <Drawer 
+        isOpen={isProductDrawerOpen} 
+        onClose={() => setIsProductDrawerOpen(false)} 
+        title="Yeni Ürün / Hizmet Ekle"
+      >
+        <ProductForm onSuccess={() => {
+          setIsProductDrawerOpen(false);
+          window.location.reload();
+        }} />
+      </Drawer>
     </main>
   );
 }
