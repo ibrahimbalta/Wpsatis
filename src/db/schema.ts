@@ -7,9 +7,9 @@ export const users = pgTable('users', {
   name: text('name'),
   
   // Kurumsal Kimlik Alanları
-  companyName: text('company_name'), // Emlak Ofisi İsmi
-  logoUrl: text('logo_url'), // Ofis Logo Linki
-  whatsappNumber: text('whatsapp_number'), // Müşteri Hattı
+  companyName: text('company_name'), 
+  logoUrl: text('logo_url'), 
+  whatsappNumber: text('whatsapp_number'), 
   
   selectedSectorId: text('selected_sector_id').default('emlak'), 
   createdAt: timestamp('created_at').defaultNow(),
@@ -36,6 +36,7 @@ export const products = pgTable('products', {
   category: text('category').notNull(), 
   description: text('description'),
   
+  // Emlak Detayları
   rooms: text('rooms'),       
   squareMeters: integer('square_meters'),
   floorLevel: text('floor_level'),
@@ -43,11 +44,14 @@ export const products = pgTable('products', {
   isRental: boolean('is_rental').default(false),
   externalUrl: text('external_url'), 
   
-  imageUrl: text('image_url'), 
+  // Görsel Yönetimi (Çoklu Resim Desteği Eklendi)
+  imageUrl: text('image_url'), // Kapak fotoğrafı
+  extraImages: text('extra_images'), // JSON string olarak diğer tüm fotoğraflar
+  
+  // Analitik
   viewCount: integer('view_count').default(0), 
   clickCount: integer('click_count').default(0), 
   
-  imageLabel: text('image_label'), 
   createdAt: timestamp('created_at').defaultNow(),
 });
 
