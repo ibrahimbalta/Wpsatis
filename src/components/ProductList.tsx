@@ -1,32 +1,49 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSector } from '@/context/SectorContext';
-import { mockProducts } from '@/data/mockProducts';
-import { Send, Package, ShoppingBag } from 'lucide-react';
+import { getProducts } from '@/lib/actions';
+import { Send, Package, Loader2 } from 'lucide-react';
 
 export function ProductList({ searchQuery }: { searchQuery: string }) {
   const { currentSector } = useSector();
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredProducts = useMemo(() => {
-    if (!currentSector) return [];
-    
-    return mockProducts.filter(p => 
-      p.sectorId === currentSector.id &&
-      (p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-       p.category.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [currentSector, searchQuery]);
+  useEffect(() => {
+    async function fetchProducts() {
+      if (!currentSector) return;
+      setIsLoading(true);
+      const data = await getProducts(currentSector.id);
+      setProducts(data);
+      setIsLoading(false);
+    }
+    fetchProducts();
+  }, [currentSector]);
+
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    p.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleWhatsApp = (product: any) => {
     const message = `Merhaba, [Mağaza İsmi] üzerinden şu ürünle ilgileniyorum:\n\n` +
       `*Ürün:* ${product.name}\n` +
       `*Kategori:* ${product.category}\n` +
-      `*Fiyat:* ${product.price.toLocaleString('tr-TR')} TL\n\n` +
+      `*Fiyat:* ${Number(product.price).toLocaleString('tr-TR')} TL\n\n` +
       `Detaylı bilgi alabilir miyim?`;
       
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500 glass-card">
+        <Loader2 size={48} className="animate-spin mb-4 opacity-20" />
+        <p className="text-lg font-medium">Veriler yükleniyor...</p>
+      </div>
+    );
+  }
 
   if (filteredProducts.length === 0) {
     return (
@@ -43,7 +60,7 @@ export function ProductList({ searchQuery }: { searchQuery: string }) {
         <div key={product.id} className="glass-card overflow-hidden group hover:scale-[1.02] transition-all flex flex-col h-full bg-slate-900/20">
           <div className="aspect-[4/3] bg-gradient-to-br from-slate-800 to-slate-900 relative overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center text-slate-700 font-black text-4xl opacity-10 select-none group-hover:scale-110 transition-transform">
-              {product.imageLabel}
+              {product.imageLabel || 'ITEM'}
             </div>
             <div className="absolute top-3 left-3">
               <span className="px-2 py-1 bg-accent/20 backdrop-blur-md text-[9px] font-black text-accent rounded uppercase tracking-widest border border-accent/20">
@@ -64,7 +81,7 @@ export function ProductList({ searchQuery }: { searchQuery: string }) {
               <div className="flex flex-col">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Fiyat</span>
                 <span className="text-xl font-black text-white">
-                  {product.price.toLocaleString('tr-TR')} 
+                  {Number(product.price).toLocaleString('tr-TR')} 
                   <span className="text-xs text-slate-500 ml-1">TL</span>
                 </span>
               </div>

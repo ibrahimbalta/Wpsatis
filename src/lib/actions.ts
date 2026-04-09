@@ -44,6 +44,18 @@ export async function getProducts(sectorId: string) {
   });
 }
 
+export async function createProduct(data: { name: string, price: string, category: string, description: string, imageLabel: string, sectorId: string }) {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Oturum açılmadı');
+
+  await db.insert(products).values({
+    userId,
+    ...data,
+  });
+
+  revalidatePath('/');
+}
+
 // --- BOT RULES ---
 export async function getBotRules() {
   const { userId } = await auth();

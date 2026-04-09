@@ -1,22 +1,30 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSector } from '@/context/SectorContext';
-import { mockTemplates } from '@/data/mockTemplates';
-import { Copy, Send, ExternalLink, MessageSquareOff } from 'lucide-react';
+import { getTemplates } from '@/lib/actions';
+import { Copy, Send, ExternalLink, MessageSquareOff, Loader2 } from 'lucide-react';
 
 export function TemplateList({ searchQuery }: { searchQuery: string }) {
   const { currentSector } = useSector();
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredTemplates = useMemo(() => {
-    if (!currentSector) return [];
-    
-    return mockTemplates.filter(t => 
-      t.sectorId === currentSector.id &&
-      (t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-       t.body.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [currentSector, searchQuery]);
+  useEffect(() => {
+    async function fetchTemplates() {
+      if (!currentSector) return;
+      setIsLoading(true);
+      const data = await getTemplates(currentSector.id);
+      setTemplates(data);
+      setIsLoading(false);
+    }
+    fetchTemplates();
+  }, [currentSector]);
+
+  const filteredTemplates = templates.filter(t => 
+    t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.body.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -27,12 +35,21 @@ export function TemplateList({ searchQuery }: { searchQuery: string }) {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500 glass-card">
+        <Loader2 size={48} className="animate-spin mb-4 opacity-20" />
+        <p className="text-lg font-medium">Veriler yükleniyor...</p>
+      </div>
+    );
+  }
+
   if (filteredTemplates.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-slate-500 glass-card">
         <MessageSquareOff size={48} className="mb-4 opacity-20" />
         <p className="text-lg font-medium">Bu sektör için henüz şablon bulunamadı.</p>
-        <p className="text-sm">Yandaki "+" butonu ile yeni bir şablon ekleyebilirsiniz.</p>
+        <p className="text-sm">Yandaki "+" butonu ile yeni bir şablon ekleyebilir veya örnek verileri yükleyebilirsiniz.</p>
       </div>
     );
   }

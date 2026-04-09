@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Zap, 
   MessageSquare, 
@@ -10,62 +10,49 @@ import {
   Settings2,
   Package,
   MapPin,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getBotRules, createBotRule } from '@/lib/actions';
 
 interface BotRule {
   id: string;
   trigger: string;
   response: string;
-  actionType: 'text' | 'catalog' | 'location' | 'transfer';
+  actionType: string;
   isActive: boolean;
 }
 
 export function FlowBuilder() {
-  const [rules, setRules] = useState<BotRule[]>([
-    {
-      id: '1',
-      trigger: 'fiyat',
-      response: 'Seramik ürünlerimizin güncel m2 fiyatları 350 TL\'den başlamaktadır. Detaylı hesaplama için Hesaplayıcı modülümüzü kullanabilirsiniz.',
-      actionType: 'text',
-      isActive: true
-    },
-    {
-      id: '2',
-      trigger: 'katalog',
-      response: 'Güncel ürün kataloğumuzu hazırlıyorum. İşte popüler modellerimiz...',
-      actionType: 'catalog',
-      isActive: true
-    },
-    {
-      id: '3',
-      trigger: 'konum',
-      response: 'Mağazamız İstanbul, Şişli bölgesindedir. Konum bilgisi paylaşılıyor...',
-      actionType: 'location',
-      isActive: false
+  const [rules, setRules] = useState<BotRule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [newRule, setNewRule] = useState({ trigger: '', response: '', actionType: 'text' });
+
+  useEffect(() => {
+    async function fetchRules() {
+      setIsLoading(true);
+      const data = await getBotRules();
+      setRules(data as any);
+      setIsLoading(false);
     }
-  ]);
+    fetchRules();
+  }, []);
 
-  const [newRule, setNewRule] = useState({ trigger: '', response: '', actionType: 'text' as const });
-
-  const addRule = () => {
-    if (!newRule.trigger) return;
-    const rule: BotRule = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...newRule,
-      isActive: true
-    };
-    setRules([...rules, rule]);
-    setNewRule({ trigger: '', response: '', actionType: 'text' });
-  };
-
-  const deleteRule = (id: string) => {
-    setRules(rules.filter(r => r.id !== id));
-  };
-
-  const toggleRule = (id: string) => {
-    setRules(rules.map(r => r.id === id ? { ...r, isActive: !r.isActive } : r));
+  const handleAddRule = async () => {
+    if (!newRule.trigger || !newRule.response) return;
+    
+    setIsLoading(true);
+    try {
+      await createBotRule(newRule);
+      const data = await getBotRules();
+      setRules(data as any);
+      setNewRule({ trigger: '', response: '', actionType: 'text' });
+    } catch (error) {
+      alert('Kural eklenirken hata oluştu!');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getActionIcon = (type: string) => {
@@ -76,6 +63,15 @@ export function FlowBuilder() {
       default: return <MessageSquare size={14} />;
     }
   };
+
+  if (isLoading && rules.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500 glass-card">
+        <Loader2 size={48} className="animate-spin mb-4 opacity-20" />
+        <p className="text-lg font-medium">Kurallar yükleniyor...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto animate-in fade-in duration-700">
@@ -139,10 +135,11 @@ export function FlowBuilder() {
                 </select>
               </div>
               <button 
-                onClick={addRule}
-                className="w-full py-4 bg-accent hover:bg-accent-light text-white font-black rounded-xl transition-all shadow-xl shadow-accent/20 active:scale-95 flex items-center justify-center gap-2"
+                onClick={handleAddRule}
+                disabled={isLoading}
+                className="w-full py-4 bg-accent hover:bg-accent-light text-white font-black rounded-xl transition-all shadow-xl shadow-accent/20 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Plus size={20} className="stroke-[3px]" />
+                {isLoading ? <Loader2 className="animate-spin" /> : <Plus size={20} className="stroke-[3px]" />}
                 Kuralı Oluştur
               </button>
             </div>
@@ -169,19 +166,7 @@ export function FlowBuilder() {
                 </div>
                 
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={() => toggleRule(rule.id)}
-                    className={cn(
-                      "p-2 rounded-lg transition-all",
-                      rule.isActive ? "text-green-500 bg-green-500/10 hover:bg-green-500/20" : "text-slate-500 bg-slate-500/10 hover:bg-slate-500/20"
-                    )}
-                  >
-                    <Zap size={16} />
-                  </button>
-                  <button 
-                    onClick={() => deleteRule(rule.id)}
-                    className="p-2 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all"
-                  >
+                  <button className="p-2 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -193,7 +178,7 @@ export function FlowBuilder() {
             </div>
           ))}
           
-          {rules.length === 0 && (
+          {rules.length === 0 && !isLoading && (
             <div className="py-12 flex flex-col items-center justify-center text-slate-500 glass-card">
               <Clock size={48} className="mb-4 opacity-20" />
               <p className="font-bold">Henüz bir kural tanımlanmadı.</p>
