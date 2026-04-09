@@ -1,7 +1,7 @@
 'use server';
 
 import { google } from '@ai-sdk/google';
-import { generateText, tool } from 'ai';
+import { generateText, generateObject, tool } from 'ai';
 import { z } from 'zod';
 import { db } from '@/db';
 import { products } from '@/db/schema';
@@ -9,10 +9,20 @@ import { ilike, or, and, eq } from 'drizzle-orm';
 
 // AI Veri Ayıklama Fonksiyonu (İlan girişi için)
 export async function parseListingWithAI(text: string) {
-  const { object } = await generateText({
+  const { object } = await generateObject({
     model: google('gemini-1.5-flash'),
-    system: 'Sen bir emlak veri ayıklayıcısısın. Sana verilen karmaşık ilan metinlerinden şu bilgileri ayıklayıp JSON formatında dönmelisin: name (ilan başlığı), price (sadece sayı), category (Daire, Arsa, İşyeri vb.), rooms (2+1, 3+1 formatında), squareMeters (sayı), floorLevel, location, isRental (true/false). Eğer bilgi yoksa boş bırak.',
+    system: 'Sen bir emlak veri ayıklayıcısısın. Sana verilen karmaşık ilan metinlerinden şu bilgileri ayıklayıp JSON formatında dönmelisin.',
     prompt: `Şu ilan metnini analiz et: ${text}`,
+    schema: z.object({
+      name: z.string().optional().describe('İlan başlığı'),
+      price: z.string().optional().describe('Fiyat (sadece sayı)'),
+      category: z.string().optional().describe('Daire, Arsa, İşyeri vb.'),
+      rooms: z.string().optional().describe('2+1, 3+1 formatında'),
+      squareMeters: z.number().optional().describe('Metrekare'),
+      floorLevel: z.string().optional().describe('Kat bilgisi'),
+      location: z.string().optional().describe('Konum'),
+      isRental: z.boolean().optional().describe('Kiralık mı?'),
+    }),
   });
 
   return object;
@@ -53,6 +63,6 @@ export async function chatWithEmlakAI(messages: any[]) {
 
   return { 
     text: result.text,
-    toolResults: result.toolResults 
+    toolCalls: result.toolCalls 
   };
 }
