@@ -2,7 +2,7 @@
 
 import { db } from '@/db';
 import { products, templates, botRules, users } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { auth, currentUser } from '@clerk/nextjs/server';
 
@@ -26,6 +26,39 @@ export async function syncUser() {
   return userId;
 }
 
+// İlanları Getir
+export async function getProducts(sectorId: string) {
+  const { userId } = await auth();
+  if (!userId) return [];
+  
+  return await db.select()
+    .from(products)
+    .where(and(eq(products.userId, userId), eq(products.sectorId, sectorId)))
+    .orderBy(desc(products.createdAt));
+}
+
+// Mesaj Şablonlarını Getir
+export async function getTemplates(sectorId: string) {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  return await db.select()
+    .from(templates)
+    .where(and(eq(templates.userId, userId), eq(templates.sectorId, sectorId)))
+    .orderBy(desc(templates.createdAt));
+}
+
+// Bot Kurallarını Getir
+export async function getBotRules() {
+  const { userId } = await auth();
+  if (!userId) return [];
+
+  return await db.select()
+    .from(botRules)
+    .where(eq(botRules.userId, userId))
+    .orderBy(desc(botRules.createdAt));
+}
+
 // İlan (Gayrimenkul) Oluşturma
 export async function createProduct(formData: FormData) {
   const { userId } = await auth();
@@ -36,7 +69,6 @@ export async function createProduct(formData: FormData) {
   const category = formData.get('category') as string;
   const description = formData.get('description') as string;
   
-  // Yeni Emlak Alanları
   const rooms = formData.get('rooms') as string;
   const squareMeters = parseInt(formData.get('squareMeters') as string) || 0;
   const floorLevel = formData.get('floorLevel') as string;
