@@ -45,7 +45,7 @@ export async function chatWithEmlakAI(messages: any[]) {
           query: z.string().describe('Aranacak kelime (konum, mülk tipi vb.)'),
           isRental: z.boolean().optional(),
         }),
-        execute: async ({ query, isRental }) => {
+        execute: async ({ query, isRental }: any) => {
           const results = await db.select().from(products).where(
             and(
               or(
@@ -58,7 +58,7 @@ export async function chatWithEmlakAI(messages: any[]) {
           );
           return results;
         },
-      }),
+      } as any),
     },
   });
 
